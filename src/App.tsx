@@ -1,51 +1,136 @@
-import {BrowserRouter,Link,NavLink,Navigate,Route,Routes,useNavigate,useSearchParams} from "react-router-dom";
-import {FormEvent,useEffect,useState} from "react";
+import {BrowserRouter,Link,NavLink,Navigate,Route,Routes,useLocation,useNavigate,useSearchParams} from "react-router-dom";
+import {FormEvent,useEffect,useMemo,useState} from "react";
 import {AuthProvider,useAuth,Role} from "./Auth";
 import {api,download} from "./api";
 
-const PORTAL_NAME="Enumerator Recruitment & Training Portal";
+const PORTAL_NAME="Enumerator Recruitment and Training Portal";
+
+const heroSlides=[
+  {
+    image:"https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1400&q=80",
+    eyebrow:"Field workforce development",
+    title:"Recruit, train and qualify Enumerators with a premium digital workflow",
+    text:"A professional Enumerator platform for onboarding, payment validation, guided training, qualification and controlled field deployment.",
+    tags:["Role-based access","Secure payment verification","Structured qualification"]
+  },
+  {
+    image:"https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1400&q=80",
+    eyebrow:"Youth empowerment",
+    title:"Create a credible, modern experience that feels serious and trustworthy",
+    text:"Present the programme with a polished Nigerian-focused look, stronger structure, cleaner navigation and premium mobile responsiveness.",
+    tags:["Responsive layouts","Mature visual hierarchy","Clear call-to-actions"]
+  },
+  {
+    image:"https://images.unsplash.com/photo-1524492449090-1abe8ff79a8d?auto=format&fit=crop&w=1400&q=80",
+    eyebrow:"Farmer and community outreach",
+    title:"Prepare qualified Enumerators before they begin participant registration",
+    text:"Only trained and verified Enumerators should move into field operations, receive access codes and open the second registration platform.",
+    tags:["Training library","Assessment flow","Access-code control"]
+  }
+];
+
+const trustItems=[
+  {label:"Secure roles",value:"Admin, Enumerator"},
+  {label:"Payment control",value:"Flutterwave verified"},
+  {label:"Qualification route",value:"Train, test, qualify"},
+  {label:"Deployment control",value:"Rotating access codes"}
+];
+
+const steps=[
+  {
+    title:"Create Enumerator account",
+    text:"Collect name, contact, location and passport photograph in a structured registration flow."
+  },
+  {
+    title:"Unlock training access",
+    text:"Enumerator completes the approved payment step before materials and assessments become available."
+  },
+  {
+    title:"Study and qualify",
+    text:"Training documents and test questions are managed by the administrator, then completed from the dashboard."
+  },
+  {
+    title:"Deploy to field registration",
+    text:"Qualified Enumerators receive their Enumerator ID, active field code and the link to the second platform."
+  }
+];
+
+const promiseCards=[
+  {
+    title:"Nigerian youth and farmer focus",
+    text:"The interface projects energy, trust and empowerment with realistic support-themed visuals and a stronger local tone."
+  },
+  {
+    title:"Administrator control",
+    text:"Only the configured ADMIN account can verify payments, publish materials, create exams and rotate access codes."
+  },
+  {
+    title:"Mobile-first discipline",
+    text:"Layouts, buttons, tables and dashboards remain readable on smaller screens instead of looking squeezed and unstable."
+  }
+];
 
 function Layout({children}:{children:React.ReactNode}){
   const{user,logout}=useAuth();
+  const[open,setOpen]=useState(false);
+  const location=useLocation();
 
-  return <div className="shell">
-    <header>
-      <Link className="brand" to="/">
-        <span className="mark">ER</span>
-        <span>
-          <b>{PORTAL_NAME}</b>
-          <small>Recruit - Train - Qualify - Deploy</small>
-        </span>
-      </Link>
+  useEffect(()=>{setOpen(false);},[location.pathname]);
 
-      <nav>
-        <NavLink to="/">Home</NavLink>
+  return <div className="siteShell">
+    <header className="topbar">
+      <div className="topbarInner">
+        <Link className="brand" to="/">
+          <span className="brandMark">ER</span>
+          <span className="brandText">
+            <b>{PORTAL_NAME}</b>
+            <small>Premium Enumerator operations workflow</small>
+          </span>
+        </Link>
 
-        {!user&&<>
-          <NavLink to="/register">Become an Enumerator</NavLink>
-          <NavLink to="/login">Sign in</NavLink>
-        </>}
+        <button
+          className={`menuToggle ${open?"active":""}`}
+          type="button"
+          aria-label="Toggle navigation"
+          aria-expanded={open}
+          onClick={()=>setOpen(v=>!v)}
+        >
+          <span/>
+          <span/>
+          <span/>
+        </button>
 
-        {user?.role==="ENUMERATOR"&&<>
-          <NavLink to="/enumerator">Dashboard</NavLink>
-          <button type="button" onClick={()=>void logout()}>Sign out</button>
-        </>}
+        <div className={`navWrap ${open?"open":""}`}>
+          <nav className="mainNav">
+            <NavLink to="/">Home</NavLink>
+            {!user&&<NavLink to="/register">Become an Enumerator</NavLink>}
+            {!user&&<NavLink to="/login">Sign in</NavLink>}
+            {user?.role==="ENUMERATOR"&&<NavLink to="/enumerator">Dashboard</NavLink>}
+            {user?.role==="ADMIN"&&<NavLink to="/admin">Admin Console</NavLink>}
+          </nav>
 
-        {user?.role==="ADMIN"&&<>
-          <NavLink to="/admin">Admin Console</NavLink>
-          <button type="button" onClick={()=>void logout()}>Sign out</button>
-        </>}
-      </nav>
+          <div className="topActions">
+            {!user&&<Link className="btn secondary small" to="/register">Get started</Link>}
+            {!user&&<Link className="btn primary small" to="/login">Secure sign in</Link>}
+            {user&&<button className="btn outline small" type="button" onClick={()=>void logout()}>Sign out</button>}
+          </div>
+        </div>
+      </div>
     </header>
 
-    <main>{children}</main>
+    <main className="pageBody">{children}</main>
 
-    <footer>
-      <div>
-        <b>{PORTAL_NAME}</b>
-        <p>Enumerator recruitment, training, qualification and controlled field access.</p>
+    <footer className="footer">
+      <div className="footerInner">
+        <div>
+          <b>{PORTAL_NAME}</b>
+          <p>Enumerator onboarding, secure payment verification, training, testing and field access management.</p>
+        </div>
+        <div className="footerNote">
+          <span>Professional role-based access</span>
+          <span>Premium responsive interface</span>
+        </div>
       </div>
-      <p>Secure role-based portal</p>
     </footer>
   </div>;
 }
@@ -60,73 +145,134 @@ function Guard({role,children}:{role?:Role;children:React.ReactNode}){
   return <>{children}</>;
 }
 
-const slides=[
-  ["/slide1.svg","Join the Enumerator Network","Create your field account and complete your Enumerator profile."],
-  ["/slide2.svg","Train Before You Deploy","Unlock approved study materials and prepare for the qualification assessment."],
-  ["/slide3.svg","Qualify for Field Access","Pass the assessment to receive your Enumerator ID, active access code and participant-registration link."]
-];
+function SectionIntro({eyebrow,title,text}:{eyebrow:string;title:string;text?:string}){
+  return <div className="sectionIntro">
+    <span className="eyebrow">{eyebrow}</span>
+    <h2>{title}</h2>
+    {text&&<p className="lead">{text}</p>}
+  </div>;
+}
 
 function Home(){
-  const[i,setI]=useState(0);
+  const[index,setIndex]=useState(0);
+  const slide=heroSlides[index];
 
   useEffect(()=>{
-    const timer=setInterval(()=>setI(v=>(v+1)%slides.length),5000);
-    return()=>clearInterval(timer);
+    const timer=window.setInterval(()=>setIndex(v=>(v+1)%heroSlides.length),5500);
+    return()=>window.clearInterval(timer);
   },[]);
 
   return <>
-    <section className="hero">
-      <img src={slides[i][0]} alt=""/>
-      <div className="shade"/>
-      <div className="heroText">
-        <span>Enumerator recruitment portal</span>
-        <h1>{slides[i][1]}</h1>
-        <p>{slides[i][2]}</p>
-        <div>
-          <Link className="btn light" to="/register">Register as Enumerator</Link>
-          <Link className="btn ghost" to="/login">Enumerator sign in</Link>
+    <section className="heroPanel">
+      <div className="heroCopy">
+        <span className="eyebrow">{slide.eyebrow}</span>
+        <h1>{slide.title}</h1>
+        <p>{slide.text}</p>
+
+        <div className="heroActions">
+          <Link className="btn primary" to="/register">Register as Enumerator</Link>
+          <Link className="btn secondary" to="/login">Open secure portal</Link>
+        </div>
+
+        <div className="tagRow">
+          {slide.tags.map(tag=><span key={tag} className="tag">{tag}</span>)}
+        </div>
+
+        <div className="heroStats">
+          {trustItems.map(item=>
+            <article key={item.label} className="metricCard">
+              <small>{item.label}</small>
+              <strong>{item.value}</strong>
+            </article>
+          )}
+        </div>
+
+        <div className="heroDots" aria-label="Hero slides">
+          {heroSlides.map((item,i)=>
+            <button
+              key={item.title}
+              type="button"
+              className={i===index?"active":""}
+              aria-label={`Show slide ${i+1}`}
+              onClick={()=>setIndex(i)}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="heroMedia">
+        <div className="heroImageFrame">
+          <img src={slide.image} alt={slide.title}/>
+          <div className="heroOverlayCard">
+            <span className="eyebrow">Field readiness</span>
+            <h3>From onboarding to deployment</h3>
+            <p>Designed for a credible programme experience that looks premium on desktop and mobile.</p>
+          </div>
         </div>
       </div>
     </section>
 
     <section className="section">
-      <span className="eyebrow">Qualification pathway</span>
-      <h2>One clear process from registration to field deployment</h2>
-      <p className="lead">Every Enumerator completes the same controlled workflow before receiving participant-registration access.</p>
+      <SectionIntro
+        eyebrow="Process clarity"
+        title="A clean pathway that feels professional from the first screen"
+        text="The platform keeps onboarding, training, assessment and deployment in one structured workflow so Enumerators clearly understand what happens next."
+      />
 
-      <div className="grid3">
-        <article className="card">
-          <h3>1. Create your account</h3>
-          <p>Register with your contact details, location and passport photograph.</p>
-        </article>
+      <div className="featureGrid four">
+        {steps.map((step,i)=>
+          <article key={step.title} className="card featureCard">
+            <span className="stepBadge">0{i+1}</span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </article>
+        )}
+      </div>
+    </section>
 
-        <article className="card">
-          <h3>2. Complete training payment</h3>
-          <p>Use the secure payment flow to unlock the Enumerator training library.</p>
-        </article>
+    <section className="section altSection">
+      <SectionIntro
+        eyebrow="Experience promise"
+        title="Built to look mature, serious and trustworthy"
+        text="The portal now leans into premium structure, improved spacing, stronger visual hierarchy and realistic support-focused imagery."
+      />
 
-        <article className="card">
-          <h3>3. Study approved materials</h3>
-          <p>Download and study the materials published by the programme administrator.</p>
-        </article>
-
-        <article className="card">
-          <h3>4. Take the assessment</h3>
-          <p>Complete the qualification examination from your secure dashboard.</p>
-        </article>
-
-        <article className="card">
-          <h3>5. Become qualified</h3>
-          <p>Successful Enumerators receive their unique Enumerator ID.</p>
-        </article>
-
-        <article className="card">
-          <h3>6. Receive field access</h3>
-          <p>Qualified Enumerators receive the active access code and participant-platform link.</p>
-        </article>
+      <div className="featureGrid three">
+        {promiseCards.map(card=>
+          <article key={card.title} className="card toneCard">
+            <h3>{card.title}</h3>
+            <p>{card.text}</p>
+          </article>
+        )}
       </div>
     </section>
   </>;
+}
+
+function AuthShell({eyebrow,title,description,asideTitle,asideText,bullets,children}:{eyebrow:string;title:string;description:string;asideTitle:string;asideText:string;bullets:string[];children:React.ReactNode}){
+  return <section className="authSection">
+    <div className="authIntro">
+      <span className="eyebrow">{eyebrow}</span>
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <div className="authVisual">
+        <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1200&q=80" alt="Young African team planning community support work"/>
+      </div>
+    </div>
+
+    <aside className="authAside">
+      <span className="eyebrow">Why this portal</span>
+      <h2>{asideTitle}</h2>
+      <p>{asideText}</p>
+      <ul className="asideList">
+        {bullets.map(item=><li key={item}>{item}</li>)}
+      </ul>
+    </aside>
+
+    <div className="authCard">
+      {children}
+    </div>
+  </section>;
 }
 
 function Login(){
@@ -148,12 +294,19 @@ function Login(){
     }
   }
 
-  return <section className="auth">
+  return <AuthShell
+    eyebrow="Secure access"
+    title="Sign in to the premium operations portal"
+    description="Administrators and Enumerators use one secure login and are routed only to the controls their roles allow."
+    asideTitle="Professional access control"
+    asideText="This portal is designed to keep the workflow clean. Enumerators access only their dashboard. The administrator alone sees programme controls."
+    bullets={[
+      "Role-based routing after login",
+      "Protected admin operations",
+      "Clean mobile and desktop sign-in experience"
+    ]}
+  >
     <form className="form" onSubmit={submit}>
-      <span className="eyebrow">Secure portal access</span>
-      <h1>Sign in</h1>
-      <p>Enumerators and the programme administrator sign in here.</p>
-
       {error&&<div className="error">{error}</div>}
 
       <label>Email
@@ -164,9 +317,9 @@ function Login(){
         <input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" required/>
       </label>
 
-      <button className="btn primary" type="submit">Sign in</button>
+      <button className="btn primary full" type="submit">Sign in</button>
     </form>
-  </section>;
+  </AuthShell>;
 }
 
 function EnumeratorSignup(){
@@ -200,12 +353,19 @@ function EnumeratorSignup(){
     }
   }
 
-  return <section className="auth">
+  return <AuthShell
+    eyebrow="Enumerator onboarding"
+    title="Create a polished Enumerator profile"
+    description="Register once, complete payment, access study materials, take the qualifying test and become ready for field deployment."
+    asideTitle="What happens after registration"
+    asideText="This is not a loose sign-up form. It feeds a controlled programme pipeline that leads from onboarding to qualification and then field access."
+    bullets={[
+      "Secure training-access payment",
+      "Administrator-published materials and test",
+      "Enumerator ID and field access after qualification"
+    ]}
+  >
     <form className="form wide" onSubmit={submit}>
-      <span className="eyebrow">Enumerator recruitment</span>
-      <h1>Create your Enumerator account</h1>
-      <p>After registration, your dashboard will guide you through payment, training, assessment and qualification.</p>
-
       {error&&<div className="error">{error}</div>}
 
       <div className="fields">
@@ -221,12 +381,16 @@ function EnumeratorSignup(){
 
       <label className="check">
         <input name="termsAccepted" type="checkbox" value="true" required/>
-        I confirm that the information supplied is correct.
+        I confirm that the supplied information is accurate.
       </label>
 
-      <button className="btn primary" type="submit">Create Enumerator account</button>
+      <button className="btn primary full" type="submit">Create Enumerator account</button>
     </form>
-  </section>;
+  </AuthShell>;
+}
+
+function StatusPill({value}:{value:string}){
+  return <b className={`statusPill status-${String(value).toLowerCase()}`}>{value}</b>;
 }
 
 function EnumeratorDash(){
@@ -236,6 +400,7 @@ function EnumeratorDash(){
   const[answers,setAnswers]=useState<Record<number,string>>({});
   const[message,setMessage]=useState("");
   const[error,setError]=useState("");
+  const[busy,setBusy]=useState("");
 
   const load=async()=>{
     setError("");
@@ -257,12 +422,13 @@ function EnumeratorDash(){
     }
   };
 
-  useEffect(()=>{void load()},[]);
+  useEffect(()=>{void load();},[]);
 
   const pay=async()=>{
     setError("");
 
     try{
+      setBusy("payment");
       const response=await api<any>("/api/payments/initiate",{
         method:"POST",
         body:JSON.stringify({purpose:"ENUMERATOR_REGISTRATION"})
@@ -271,6 +437,7 @@ function EnumeratorDash(){
       window.location.assign(response.checkoutUrl);
     }catch(err){
       setError(err instanceof Error?err.message:"Could not start payment");
+      setBusy("");
     }
   };
 
@@ -278,6 +445,7 @@ function EnumeratorDash(){
     e.preventDefault();
     setError("");
     setMessage("");
+    setBusy("exam");
 
     try{
       const response=await api<any>("/api/exam/submit",{
@@ -294,122 +462,159 @@ function EnumeratorDash(){
       await load();
     }catch(err){
       setError(err instanceof Error?err.message:"Assessment submission failed");
+    }finally{
+      setBusy("");
     }
   }
 
-  if(!data&&!error)return <div className="card center">Loading Enumerator dashboard...</div>;
+  const progressLabel=useMemo(()=>{
+    if(!data)return "Loading";
+    if(data.status==="PENDING_PAYMENT")return "Pending payment";
+    if(data.status==="PAID")return "Training active";
+    if(data.status==="QUALIFIED")return "Qualified";
+    return data.status;
+  },[data]);
 
-  return <section className="section">
-    <div className="dashHead">
+  if(!data&&!error)return <div className="card center panel">Loading Enumerator dashboard...</div>;
+
+  return <section className="dashboardShell">
+    <div className="dashboardHero">
       <div>
         <span className="eyebrow">Enumerator dashboard</span>
-        <h1>{data?`Welcome, ${data.fullName}`:"Dashboard"}</h1>
+        <h1>{data?`Welcome, ${data.fullName}`:"Enumerator dashboard"}</h1>
+        <p>Your workflow is arranged clearly: payment, training, assessment, qualification and field deployment.</p>
       </div>
-      {data&&<b className="pill">{data.status}</b>}
+      {data&&<StatusPill value={data.status}/>}
     </div>
 
     {error&&<div className="error">{error}</div>}
     {message&&<div className="success">{message}</div>}
 
     {data&&<>
-      <div className="grid3">
-        <article className="card profile">
+      <div className="featureGrid three">
+        <article className="card profileCard">
           <img src={data.passportUrl} alt={`${data.fullName} passport`}/>
           <div>
-            <h3>Profile</h3>
+            <span className="eyebrow">Profile</span>
+            <h3>{data.fullName}</h3>
             <p>{data.email}</p>
             <p>{data.phone}</p>
             <p>{data.lga}, {data.state}</p>
           </div>
         </article>
 
-        <article className="card">
-          <h3>Enumerator ID</h3>
-          <strong className="metric">{data.enumeratorCode||"Not assigned yet"}</strong>
-          <p>Your unique field identity is issued after qualification.</p>
+        <article className="card statCard">
+          <small>Enumerator ID</small>
+          <strong>{data.enumeratorCode||"Not assigned yet"}</strong>
+          <p>Issued after successful qualification.</p>
         </article>
 
-        <article className="card">
-          <h3>Assessment score</h3>
-          <strong className="metric">{data.examScore==null?"Not attempted":`${data.examScore}%`}</strong>
-          <p>Your latest qualification result.</p>
+        <article className="card statCard">
+          <small>Assessment progress</small>
+          <strong>{progressLabel}</strong>
+          <p>{data.examScore==null?"No score yet":`Latest score: ${data.examScore}%`}</p>
         </article>
       </div>
 
       {data.status==="PENDING_PAYMENT"&&
-        <article className="card dark">
-          <span className="eyebrow">Training access</span>
-          <h2>Unlock Enumerator training</h2>
-          <p>Complete the training-access payment to unlock study materials and the qualification assessment.</p>
-          <button className="btn light" type="button" onClick={()=>void pay()}>Proceed to secure payment</button>
+        <article className="panel bannerPanel">
+          <div>
+            <span className="eyebrow">Unlock training access</span>
+            <h2>Complete your Enumerator payment</h2>
+            <p>Once payment is verified, your training materials and qualification test become available inside this dashboard.</p>
+          </div>
+          <button className="btn primary" type="button" disabled={busy==="payment"} onClick={()=>void pay()}>
+            {busy==="payment"?"Redirecting...":"Proceed to secure payment"}
+          </button>
         </article>
       }
 
       {["PAID","QUALIFIED"].includes(data.status)&&<>
-        <article className="card">
-          <span className="eyebrow">Training library</span>
-          <h2>Approved study materials</h2>
+        <div className="dashboardColumns">
+          <article className="card resourcePanel">
+            <span className="eyebrow">Training library</span>
+            <h2>Approved study materials</h2>
 
-          {materials.length
-            ?materials.map(item=>
-              <button
-                className="resource"
-                type="button"
-                key={item.id}
-                onClick={()=>void download(`/api/training/materials/${item.id}/download`,item.originalFilename)}
-              >
-                <span><b>{item.title}</b><small>{item.description}</small></span>
-                <b>Download</b>
-              </button>
-            )
-            :<p>No study material has been published yet.</p>
+            {materials.length
+              ?<div className="resourceList">
+                {materials.map(item=>
+                  <button
+                    className="resource"
+                    type="button"
+                    key={item.id}
+                    onClick={()=>void download(`/api/training/materials/${item.id}/download`,item.originalFilename)}
+                  >
+                    <span>
+                      <b>{item.title}</b>
+                      <small>{item.description}</small>
+                    </span>
+                    <em>Download</em>
+                  </button>
+                )}
+              </div>
+              :<p className="muted">No study material has been published yet.</p>
+            }
+          </article>
+
+          {data.status!=="QUALIFIED"&&
+            <form className="card examPanel" onSubmit={submitExam}>
+              <span className="eyebrow">Qualification test</span>
+              <h2>Enumerator assessment</h2>
+
+              {!questions.length&&<p className="muted">The administrator has not published assessment questions yet.</p>}
+
+              {questions.map((question,index)=>
+                <fieldset key={question.id}>
+                  <legend>{index+1}. {question.questionText}</legend>
+
+                  {question.options.map((option:string,optionIndex:number)=>{
+                    const value=String.fromCharCode(65+optionIndex);
+
+                    return <label key={value}>
+                      <input
+                        type="radio"
+                        name={`q${question.id}`}
+                        required
+                        checked={answers[question.id]===value}
+                        onChange={()=>setAnswers(previous=>({...previous,[question.id]:value}))}
+                      />
+                      {" "}{value}. {option}
+                    </label>;
+                  })}
+                </fieldset>
+              )}
+
+              {!!questions.length&&<button className="btn primary full" type="submit" disabled={busy==="exam"}>{busy==="exam"?"Submitting...":"Submit assessment"}</button>}
+            </form>
           }
-        </article>
-
-        {data.status!=="QUALIFIED"&&
-          <form className="card" onSubmit={submitExam}>
-            <span className="eyebrow">Qualification assessment</span>
-            <h2>Enumerator examination</h2>
-
-            {!questions.length&&<p>The administrator has not published assessment questions yet.</p>}
-
-            {questions.map((question,index)=>
-              <fieldset key={question.id}>
-                <legend>{index+1}. {question.questionText}</legend>
-
-                {question.options.map((option:string,optionIndex:number)=>{
-                  const value=String.fromCharCode(65+optionIndex);
-
-                  return <label key={value}>
-                    <input
-                      type="radio"
-                      name={`q${question.id}`}
-                      required
-                      onChange={()=>setAnswers(previous=>({...previous,[question.id]:value}))}
-                    />
-                    {" "}{value}. {option}
-                  </label>;
-                })}
-              </fieldset>
-            )}
-
-            {!!questions.length&&<button className="btn primary" type="submit">Submit assessment</button>}
-          </form>
-        }
+        </div>
       </>}
 
       {data.status==="QUALIFIED"&&
-        <article className="card dark">
-          <span className="eyebrow">Qualified field access</span>
-          <h2>Participant recruitment credentials</h2>
-          <p>Use the currently active access code together with your Enumerator ID when registering participants on the separate participant platform.</p>
+        <article className="panel premiumPanel">
+          <div>
+            <span className="eyebrow">Qualified field access</span>
+            <h2>You are ready for the second platform</h2>
+            <p>Use the active access code and the participant-registration link when beginning field registration.</p>
+          </div>
 
-          <strong className="code">{data.activeAccessCode||"Waiting for administrator access code"}</strong>
+          <div className="accessCardGrid">
+            <div className="accessTile">
+              <small>Active access code</small>
+              <strong>{data.activeAccessCode||"Waiting for administrator code"}</strong>
+            </div>
 
-          {data.referralLink&&<>
-            <input readOnly value={data.referralLink} aria-label="Participant registration link"/>
-            <button className="btn light" type="button" onClick={()=>void navigator.clipboard.writeText(data.referralLink)}>Copy participant link</button>
-          </>}
+            <div className="accessTile wide">
+              <small>Participant platform link</small>
+              {data.referralLink
+                ?<>
+                  <input readOnly value={data.referralLink} aria-label="Participant registration link"/>
+                  <button className="btn secondary small" type="button" onClick={()=>void navigator.clipboard.writeText(data.referralLink)}>Copy link</button>
+                </>
+                :<p className="muted">The participant-platform link will appear here when available.</p>
+              }
+            </div>
+          </div>
         </article>
       }
     </>}
@@ -452,7 +657,7 @@ function Admin(){
     }
   };
 
-  useEffect(()=>{void load()},[]);
+  useEffect(()=>{void load();},[]);
 
   async function createCode(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
@@ -560,14 +765,14 @@ function Admin(){
   const verifiedPayments=payments.filter(payment=>payment.status==="SUCCESSFUL").length;
   const failedPayments=payments.filter(payment=>payment.status==="FAILED").length;
 
-  return <section className="section adminSection">
-    <div className="dashHead">
+  return <section className="dashboardShell adminShell">
+    <div className="dashboardHero">
       <div>
         <span className="eyebrow">Private administration</span>
-        <h1>Enumerator programme control centre</h1>
-        <p className="lead compactLead">Only the configured administrator can access these controls.</p>
+        <h1>Programme control centre</h1>
+        <p>Manage Enumerator records, verified payments, training assets, assessment questions and access-code rotation from one premium interface.</p>
       </div>
-      <b className="pill adminOnly">ADMIN ONLY</b>
+      <StatusPill value="ADMIN ONLY"/>
     </div>
 
     {error&&<div className="error">{error}</div>}
@@ -578,22 +783,22 @@ function Admin(){
       <button className={activeTab==="payments"?"active":""} type="button" onClick={()=>setActiveTab("payments")}>
         Payments {pendingPayments>0&&<span className="tabCount">{pendingPayments}</span>}
       </button>
-      <button className={activeTab==="training"?"active":""} type="button" onClick={()=>setActiveTab("training")}>Training & Exam</button>
+      <button className={activeTab==="training"?"active":""} type="button" onClick={()=>setActiveTab("training")}>Training and Exam</button>
       <button className={activeTab==="access"?"active":""} type="button" onClick={()=>setActiveTab("access")}>Access Code</button>
       <button className="refreshTab" type="button" onClick={()=>void load()}>Refresh data</button>
     </div>
 
     {activeTab==="overview"&&<>
       {stats&&
-        <div className="stats adminStats">
-          <div><small>Registered Enumerators</small><b>{stats.enumerators}</b></div>
-          <div><small>Qualified</small><b>{stats.qualifiedEnumerators}</b></div>
-          <div><small>Verified payment value</small><b>NGN {Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</b></div>
-          <div><small>Pending payments</small><b>{pendingPayments}</b></div>
+        <div className="featureGrid four">
+          <article className="card statCard"><small>Registered Enumerators</small><strong>{stats.enumerators}</strong><p>All created Enumerator accounts.</p></article>
+          <article className="card statCard"><small>Qualified</small><strong>{stats.qualifiedEnumerators}</strong><p>Enumerators who passed the assessment.</p></article>
+          <article className="card statCard"><small>Verified payment value</small><strong>NGN {Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</strong><p>Total verified value.</p></article>
+          <article className="card statCard"><small>Pending payments</small><strong>{pendingPayments}</strong><p>Awaiting Flutterwave verification.</p></article>
         </div>
       }
 
-      <article className="card table adminTable">
+      <article className="card tableWrap">
         <div className="tableHead">
           <div>
             <span className="eyebrow">Enumerator registry</span>
@@ -604,143 +809,142 @@ function Admin(){
 
         {enumerators.length===0
           ?<div className="emptyState"><h3>No Enumerators yet</h3><p>New registrations will appear here automatically.</p></div>
-          :<table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>State</th>
-                <th>Enumerator ID</th>
-                <th>Status</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {enumerators.map((item,index)=>
-                <tr key={item.id??index}>
-                  <td><strong>{item.fullName}</strong></td>
-                  <td>{item.email}</td>
-                  <td>{item.phone}</td>
-                  <td>{item.state}</td>
-                  <td>{item.enumeratorCode||"-"}</td>
-                  <td><span className={`statusTag status-${String(item.status).toLowerCase()}`}>{item.status}</span></td>
-                  <td>{item.examScore==null?"-":`${item.examScore}%`}</td>
+          :<div className="tableScroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>State</th>
+                  <th>Enumerator ID</th>
+                  <th>Status</th>
+                  <th>Score</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {enumerators.map((item,index)=>
+                  <tr key={item.id??index}>
+                    <td><strong>{item.fullName}</strong></td>
+                    <td>{item.email}</td>
+                    <td>{item.phone}</td>
+                    <td>{item.state}</td>
+                    <td>{item.enumeratorCode||"-"}</td>
+                    <td><StatusPill value={item.status}/></td>
+                    <td>{item.examScore==null?"-":`${item.examScore}%`}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         }
       </article>
     </>}
 
     {activeTab==="payments"&&<>
-      <div className="stats paymentStats">
-        <div><small>All payments</small><b>{payments.length}</b></div>
-        <div><small>Pending</small><b>{pendingPayments}</b></div>
-        <div><small>Verified</small><b>{verifiedPayments}</b></div>
-        <div><small>Failed</small><b>{failedPayments}</b></div>
+      <div className="featureGrid four">
+        <article className="card statCard"><small>All payments</small><strong>{payments.length}</strong><p>Total payment records.</p></article>
+        <article className="card statCard"><small>Pending</small><strong>{pendingPayments}</strong><p>Waiting for verification.</p></article>
+        <article className="card statCard"><small>Verified</small><strong>{verifiedPayments}</strong><p>Successful verified payments.</p></article>
+        <article className="card statCard"><small>Failed</small><strong>{failedPayments}</strong><p>Failed or rejected attempts.</p></article>
       </div>
 
-      <article className="card table adminTable">
+      <article className="card tableWrap">
         <div className="tableHead">
           <div>
             <span className="eyebrow">Payment operations</span>
             <h2>Verify Enumerator payments</h2>
-            <p>Verification checks Flutterwave before access is granted.</p>
+            <p className="muted">Verification checks Flutterwave before access is granted.</p>
           </div>
         </div>
 
         {payments.length===0
           ?<div className="emptyState"><h3>No payment records yet</h3><p>Enumerator checkout attempts will appear here.</p></div>
-          :<table>
-            <thead>
-              <tr>
-                <th>Enumerator</th>
-                <th>Reference</th>
-                <th>Purpose</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Provider status</th>
-                <th>Flutterwave ID</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {payments.map(payment=>
-                <tr key={payment.id}>
-                  <td>
-                    <strong>{payment.fullName||"Unknown user"}</strong>
-                    <small className="tableSub">{payment.email||""}</small>
-                  </td>
-                  <td className="mono">{payment.txRef}</td>
-                  <td>{payment.purpose}</td>
-                  <td>{payment.currency} {Number(payment.amount||0).toLocaleString()}</td>
-                  <td><span className={`statusTag status-${String(payment.status).toLowerCase()}`}>{payment.status}</span></td>
-                  <td>{payment.providerStatus||"-"}</td>
-                  <td>
-                    {payment.status==="SUCCESSFUL"
-                      ?<span className="mono">{payment.providerTransactionId||"-"}</span>
-                      :<input
-                        className="transactionInput"
-                        inputMode="numeric"
-                        placeholder="Transaction ID"
-                        value={transactionIds[payment.txRef]||""}
-                        onChange={e=>setTransactionIds(current=>({...current,[payment.txRef]:e.target.value.replace(/\D/g,"")}))}
-                        aria-label={`Flutterwave transaction ID for ${payment.txRef}`}
-                      />
-                    }
-                  </td>
-                  <td>
-                    {payment.status==="SUCCESSFUL"
-                      ?<span className="verifiedText">Verified</span>
-                      :<button
-                        className="btn primary smallBtn"
-                        type="button"
-                        disabled={busy===`payment:${payment.txRef}`}
-                        onClick={()=>void verifyPayment(payment.txRef)}
-                      >
-                        {busy===`payment:${payment.txRef}`?"Verifying...":"Verify payment"}
-                      </button>
-                    }
-                  </td>
+          :<div className="tableScroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Enumerator</th>
+                  <th>Reference</th>
+                  <th>Purpose</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Provider status</th>
+                  <th>Flutterwave ID</th>
+                  <th>Action</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {payments.map(payment=>
+                  <tr key={payment.id}>
+                    <td>
+                      <strong>{payment.fullName||"Unknown user"}</strong>
+                      <small className="tableSub">{payment.email||""}</small>
+                    </td>
+                    <td className="mono">{payment.txRef}</td>
+                    <td>{payment.purpose}</td>
+                    <td>{payment.currency} {Number(payment.amount||0).toLocaleString()}</td>
+                    <td><StatusPill value={payment.status}/></td>
+                    <td>{payment.providerStatus||"-"}</td>
+                    <td>
+                      {payment.status==="SUCCESSFUL"
+                        ?<span className="mono">{payment.providerTransactionId||"-"}</span>
+                        :<input
+                          className="transactionInput"
+                          inputMode="numeric"
+                          placeholder="Transaction ID"
+                          value={transactionIds[payment.txRef]||""}
+                          onChange={e=>setTransactionIds(current=>({...current,[payment.txRef]:e.target.value.replace(/\D/g,"")}))}
+                          aria-label={`Flutterwave transaction ID for ${payment.txRef}`}
+                        />
+                      }
+                    </td>
+                    <td>
+                      {payment.status==="SUCCESSFUL"
+                        ?<span className="verifiedText">Verified</span>
+                        :<button
+                          className="btn primary small"
+                          type="button"
+                          disabled={busy===`payment:${payment.txRef}`}
+                          onClick={()=>void verifyPayment(payment.txRef)}
+                        >
+                          {busy===`payment:${payment.txRef}`?"Verifying...":"Verify payment"}
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         }
       </article>
     </>}
 
     {activeTab==="training"&&
-      <div className="grid2 adminForms">
-        <form className="card" onSubmit={uploadMaterial}>
+      <div className="featureGrid two">
+        <form className="card formCard" onSubmit={uploadMaterial}>
           <span className="eyebrow">Training library</span>
           <h2>Publish study material</h2>
-          <p>Only paid Enumerators can access published training materials.</p>
+          <p>Only paid Enumerators can access these materials.</p>
 
           <label>Title<input name="title" required maxLength={180}/></label>
           <label>Description<input name="description" required maxLength={600}/></label>
           <label>Training file<input name="file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.epub" required/></label>
 
-          <button className="btn primary" type="submit" disabled={busy==="material"}>
-            {busy==="material"?"Uploading...":"Upload material"}
-          </button>
+          <button className="btn primary full" type="submit" disabled={busy==="material"}>{busy==="material"?"Uploading...":"Upload material"}</button>
         </form>
 
-        <form className="card" onSubmit={addQuestion}>
+        <form className="card formCard" onSubmit={addQuestion}>
           <span className="eyebrow">Qualification exam</span>
           <h2>Add exam question</h2>
-          <p>Questions published here are shown only to Enumerators with verified training access.</p>
+          <p>Questions published here are visible only to Enumerators with verified training access.</p>
 
           <label>Question<input name="questionText" required maxLength={900}/></label>
-
           {["A","B","C","D"].map(option=>
             <label key={option}>Option {option}<input name={`option${option}`} required maxLength={400}/></label>
           )}
-
           <label>Correct answer
             <select name="correctOption" defaultValue="A">
               <option>A</option>
@@ -750,24 +954,19 @@ function Admin(){
             </select>
           </label>
 
-          <button className="btn primary" type="submit" disabled={busy==="question"}>
-            {busy==="question"?"Adding...":"Add question"}
-          </button>
+          <button className="btn primary full" type="submit" disabled={busy==="question"}>{busy==="question"?"Adding...":"Add question"}</button>
         </form>
       </div>
     }
 
     {activeTab==="access"&&
-      <div className="accessLayout">
-        <form className="card accessCard" onSubmit={createCode}>
+      <div className="featureGrid two">
+        <form className="card formCard" onSubmit={createCode}>
           <span className="eyebrow">Field control</span>
           <h2>Create or rotate access code</h2>
-          <p>Creating a new code deactivates the previous active code. Qualified Enumerators use the current code on the participant platform.</p>
+          <p>Creating a new code deactivates the previous active code. Qualified Enumerators then use the current code on the second platform.</p>
 
-          <label>Custom code
-            <input name="code" maxLength={32} placeholder="Leave blank to generate automatically"/>
-          </label>
-
+          <label>Custom code<input name="code" maxLength={32} placeholder="Leave blank to generate automatically"/></label>
           <label>Validity period
             <select name="validityDays" defaultValue="1">
               <option value="1">1 day</option>
@@ -778,20 +977,18 @@ function Admin(){
             </select>
           </label>
 
-          <button className="btn primary" type="submit" disabled={busy==="code"}>
-            {busy==="code"?"Activating...":"Activate new access code"}
-          </button>
+          <button className="btn primary full" type="submit" disabled={busy==="code"}>{busy==="code"?"Activating...":"Activate new access code"}</button>
         </form>
 
         <article className="card infoCard">
-          <span className="eyebrow">How field access works</span>
-          <h2>Controlled participant registration</h2>
+          <span className="eyebrow">Field deployment model</span>
+          <h2>How this connects to the second frontend</h2>
           <ol>
             <li>Enumerator completes payment and training.</li>
-            <li>Enumerator passes the qualification assessment.</li>
-            <li>You activate the current field access code.</li>
+            <li>Enumerator passes the qualification exam.</li>
+            <li>Administrator activates the current field access code.</li>
             <li>Qualified Enumerators receive the participant-platform link and code.</li>
-            <li>Rotating the code invalidates the previous active code.</li>
+            <li>The second frontend is reserved for participant registrations only.</li>
           </ol>
         </article>
       </div>
@@ -822,8 +1019,8 @@ function Callback(){
       .catch(err=>setMessage(err instanceof Error?err.message:"Payment verification failed"));
   },[params]);
 
-  return <section className="auth">
-    <div className="form center">
+  return <section className="authSection singlePanel">
+    <div className="authCard soloCard">
       <span className="eyebrow">Secure payment</span>
       <h1>Payment verification</h1>
       <p>{message}</p>
