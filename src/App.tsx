@@ -419,20 +419,34 @@ function EnumeratorDash(){
 function Admin(){
   const[stats,setStats]=useState<any>();
   const[enumerators,setEnumerators]=useState<any[]>([]);
+  const[payments,setPayments]=useState<any[]>([]);
+  const[transactionIds,setTransactionIds]=useState<Record<string,string>>({});
+  const[activeTab,setActiveTab]=useState<"overview"|"payments"|"training"|"access">("overview");
   const[message,setMessage]=useState("");
   const[error,setError]=useState("");
+  const[busy,setBusy]=useState("");
 
   const load=async()=>{
     setError("");
 
     try{
-      const[summary,registry]=await Promise.all([
+      const[summary,registry,paymentRows]=await Promise.all([
         api<any>("/api/admin/stats"),
-        api<any[]>("/api/admin/enumerators")
+        api<any[]>("/api/admin/enumerators"),
+        api<any[]>("/api/admin/payments")
       ]);
 
       setStats(summary);
       setEnumerators(registry);
+      setPayments(paymentRows);
+
+      const providerIds:Record<string,string>={};
+      paymentRows.forEach(payment=>{
+        if(payment.providerTransactionId){
+          providerIds[payment.txRef]=String(payment.providerTransactionId);
+        }
+      });
+      setTransactionIds(current=>({...providerIds,...current}));
     }catch(err){
       setError(err instanceof Error?err.message:"Could not load administration data");
     }
@@ -443,6 +457,8 @@ function Admin(){
   async function createCode(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
     setError("");
+    setMessage("");
+    setBusy("code");
 
     const form=new FormData(e.currentTarget);
 
@@ -456,14 +472,19 @@ function Admin(){
       });
 
       setMessage(`Active field code: ${response.code}`);
+      e.currentTarget.reset();
     }catch(err){
       setError(err instanceof Error?err.message:"Could not create access code");
+    }finally{
+      setBusy("");
     }
   }
 
   async function uploadMaterial(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
     setError("");
+    setMessage("");
+    setBusy("material");
 
     try{
       await api("/api/admin/training/materials",{
@@ -475,12 +496,16 @@ function Admin(){
       e.currentTarget.reset();
     }catch(err){
       setError(err instanceof Error?err.message:"Material upload failed");
+    }finally{
+      setBusy("");
     }
   }
 
   async function addQuestion(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
     setError("");
+    setMessage("");
+    setBusy("question");
 
     try{
       const payload=Object.fromEntries(new FormData(e.currentTarget));
@@ -494,113 +519,283 @@ function Admin(){
       e.currentTarget.reset();
     }catch(err){
       setError(err instanceof Error?err.message:"Could not add exam question");
+    }finally{
+      setBusy("");
     }
   }
 
-  return <section className="section">
+  async function verifyPayment(txRef:string){
+    setError("");
+    setMessage("");
+
+    const raw=(transactionIds[txRef]||"").trim();
+    if(!raw||!Number.isFinite(Number(raw))||Number(raw)<=0){
+      setError("Enter the Flutterwave transaction ID before verification.");
+      return;
+    }
+
+    setBusy(`payment:${txRef}`);
+
+    try{
+      const response=await api<any>(`/api/admin/payments/${encodeURIComponent(txRef)}/verify`,{
+        method:"POST",
+        body:JSON.stringify({transactionId:Number(raw)})
+      });
+
+      if(!response.verified){
+        setError(response.message||"Flutterwave did not verify this payment.");
+        return;
+      }
+
+      setMessage(response.message||"Payment verified successfully.");
+      await load();
+    }catch(err){
+      setError(err instanceof Error?err.message:"Payment verification failed");
+    }finally{
+      setBusy("");
+    }
+  }
+
+  const pendingPayments=payments.filter(payment=>payment.status==="PENDING").length;
+  const verifiedPayments=payments.filter(payment=>payment.status==="SUCCESSFUL").length;
+  const failedPayments=payments.filter(payment=>payment.status==="FAILED").length;
+
+  return <section className="section adminSection">
     <div className="dashHead">
       <div>
         <span className="eyebrow">Private administration</span>
         <h1>Enumerator programme control centre</h1>
+        <p className="lead compactLead">Only the configured administrator can access these controls.</p>
       </div>
-      <b className="pill">ADMIN ONLY</b>
+      <b className="pill adminOnly">ADMIN ONLY</b>
     </div>
 
     {error&&<div className="error">{error}</div>}
     {message&&<div className="success">{message}</div>}
 
-    {stats&&
-      <div className="stats">
-        <div><small>Registered Enumerators</small><b>{stats.enumerators}</b></div>
-        <div><small>Qualified</small><b>{stats.qualifiedEnumerators}</b></div>
-        <div><small>Verified payments</small><b>NGN {Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</b></div>
+    <div className="adminTabs" role="tablist" aria-label="Admin sections">
+      <button className={activeTab==="overview"?"active":""} type="button" onClick={()=>setActiveTab("overview")}>Overview</button>
+      <button className={activeTab==="payments"?"active":""} type="button" onClick={()=>setActiveTab("payments")}>
+        Payments {pendingPayments>0&&<span className="tabCount">{pendingPayments}</span>}
+      </button>
+      <button className={activeTab==="training"?"active":""} type="button" onClick={()=>setActiveTab("training")}>Training & Exam</button>
+      <button className={activeTab==="access"?"active":""} type="button" onClick={()=>setActiveTab("access")}>Access Code</button>
+      <button className="refreshTab" type="button" onClick={()=>void load()}>Refresh data</button>
+    </div>
+
+    {activeTab==="overview"&&<>
+      {stats&&
+        <div className="stats adminStats">
+          <div><small>Registered Enumerators</small><b>{stats.enumerators}</b></div>
+          <div><small>Qualified</small><b>{stats.qualifiedEnumerators}</b></div>
+          <div><small>Verified payment value</small><b>NGN {Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</b></div>
+          <div><small>Pending payments</small><b>{pendingPayments}</b></div>
+        </div>
+      }
+
+      <article className="card table adminTable">
+        <div className="tableHead">
+          <div>
+            <span className="eyebrow">Enumerator registry</span>
+            <h2>Registered Enumerators</h2>
+          </div>
+          <span className="recordCount">{enumerators.length} record{enumerators.length===1?"":"s"}</span>
+        </div>
+
+        {enumerators.length===0
+          ?<div className="emptyState"><h3>No Enumerators yet</h3><p>New registrations will appear here automatically.</p></div>
+          :<table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>State</th>
+                <th>Enumerator ID</th>
+                <th>Status</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {enumerators.map((item,index)=>
+                <tr key={item.id??index}>
+                  <td><strong>{item.fullName}</strong></td>
+                  <td>{item.email}</td>
+                  <td>{item.phone}</td>
+                  <td>{item.state}</td>
+                  <td>{item.enumeratorCode||"-"}</td>
+                  <td><span className={`statusTag status-${String(item.status).toLowerCase()}`}>{item.status}</span></td>
+                  <td>{item.examScore==null?"-":`${item.examScore}%`}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        }
+      </article>
+    </>}
+
+    {activeTab==="payments"&&<>
+      <div className="stats paymentStats">
+        <div><small>All payments</small><b>{payments.length}</b></div>
+        <div><small>Pending</small><b>{pendingPayments}</b></div>
+        <div><small>Verified</small><b>{verifiedPayments}</b></div>
+        <div><small>Failed</small><b>{failedPayments}</b></div>
+      </div>
+
+      <article className="card table adminTable">
+        <div className="tableHead">
+          <div>
+            <span className="eyebrow">Payment operations</span>
+            <h2>Verify Enumerator payments</h2>
+            <p>Verification checks Flutterwave before access is granted.</p>
+          </div>
+        </div>
+
+        {payments.length===0
+          ?<div className="emptyState"><h3>No payment records yet</h3><p>Enumerator checkout attempts will appear here.</p></div>
+          :<table>
+            <thead>
+              <tr>
+                <th>Enumerator</th>
+                <th>Reference</th>
+                <th>Purpose</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Provider status</th>
+                <th>Flutterwave ID</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {payments.map(payment=>
+                <tr key={payment.id}>
+                  <td>
+                    <strong>{payment.fullName||"Unknown user"}</strong>
+                    <small className="tableSub">{payment.email||""}</small>
+                  </td>
+                  <td className="mono">{payment.txRef}</td>
+                  <td>{payment.purpose}</td>
+                  <td>{payment.currency} {Number(payment.amount||0).toLocaleString()}</td>
+                  <td><span className={`statusTag status-${String(payment.status).toLowerCase()}`}>{payment.status}</span></td>
+                  <td>{payment.providerStatus||"-"}</td>
+                  <td>
+                    {payment.status==="SUCCESSFUL"
+                      ?<span className="mono">{payment.providerTransactionId||"-"}</span>
+                      :<input
+                        className="transactionInput"
+                        inputMode="numeric"
+                        placeholder="Transaction ID"
+                        value={transactionIds[payment.txRef]||""}
+                        onChange={e=>setTransactionIds(current=>({...current,[payment.txRef]:e.target.value.replace(/\D/g,"")}))}
+                        aria-label={`Flutterwave transaction ID for ${payment.txRef}`}
+                      />
+                    }
+                  </td>
+                  <td>
+                    {payment.status==="SUCCESSFUL"
+                      ?<span className="verifiedText">Verified</span>
+                      :<button
+                        className="btn primary smallBtn"
+                        type="button"
+                        disabled={busy===`payment:${payment.txRef}`}
+                        onClick={()=>void verifyPayment(payment.txRef)}
+                      >
+                        {busy===`payment:${payment.txRef}`?"Verifying...":"Verify payment"}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        }
+      </article>
+    </>}
+
+    {activeTab==="training"&&
+      <div className="grid2 adminForms">
+        <form className="card" onSubmit={uploadMaterial}>
+          <span className="eyebrow">Training library</span>
+          <h2>Publish study material</h2>
+          <p>Only paid Enumerators can access published training materials.</p>
+
+          <label>Title<input name="title" required maxLength={180}/></label>
+          <label>Description<input name="description" required maxLength={600}/></label>
+          <label>Training file<input name="file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.epub" required/></label>
+
+          <button className="btn primary" type="submit" disabled={busy==="material"}>
+            {busy==="material"?"Uploading...":"Upload material"}
+          </button>
+        </form>
+
+        <form className="card" onSubmit={addQuestion}>
+          <span className="eyebrow">Qualification exam</span>
+          <h2>Add exam question</h2>
+          <p>Questions published here are shown only to Enumerators with verified training access.</p>
+
+          <label>Question<input name="questionText" required maxLength={900}/></label>
+
+          {["A","B","C","D"].map(option=>
+            <label key={option}>Option {option}<input name={`option${option}`} required maxLength={400}/></label>
+          )}
+
+          <label>Correct answer
+            <select name="correctOption" defaultValue="A">
+              <option>A</option>
+              <option>B</option>
+              <option>C</option>
+              <option>D</option>
+            </select>
+          </label>
+
+          <button className="btn primary" type="submit" disabled={busy==="question"}>
+            {busy==="question"?"Adding...":"Add question"}
+          </button>
+        </form>
       </div>
     }
 
-    <div className="grid3">
-      <form className="card" onSubmit={createCode}>
-        <span className="eyebrow">Field control</span>
-        <h2>Create / rotate access code</h2>
-        <p>Qualified Enumerators use the current code for participant registration.</p>
+    {activeTab==="access"&&
+      <div className="accessLayout">
+        <form className="card accessCard" onSubmit={createCode}>
+          <span className="eyebrow">Field control</span>
+          <h2>Create or rotate access code</h2>
+          <p>Creating a new code deactivates the previous active code. Qualified Enumerators use the current code on the participant platform.</p>
 
-        <label>Custom code
-          <input name="code" placeholder="Leave blank to generate"/>
-        </label>
+          <label>Custom code
+            <input name="code" maxLength={32} placeholder="Leave blank to generate automatically"/>
+          </label>
 
-        <label>Validity
-          <select name="validityDays" defaultValue="1">
-            <option value="1">1 day</option>
-            <option value="7">7 days</option>
-          </select>
-        </label>
+          <label>Validity period
+            <select name="validityDays" defaultValue="1">
+              <option value="1">1 day</option>
+              <option value="3">3 days</option>
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </label>
 
-        <button className="btn primary" type="submit">Activate code</button>
-      </form>
+          <button className="btn primary" type="submit" disabled={busy==="code"}>
+            {busy==="code"?"Activating...":"Activate new access code"}
+          </button>
+        </form>
 
-      <form className="card" onSubmit={uploadMaterial}>
-        <span className="eyebrow">Training</span>
-        <h2>Publish study material</h2>
-
-        <label>Title<input name="title" required/></label>
-        <label>Description<input name="description" required/></label>
-        <label>Training file<input name="file" type="file" required/></label>
-
-        <button className="btn primary" type="submit">Upload material</button>
-      </form>
-
-      <form className="card" onSubmit={addQuestion}>
-        <span className="eyebrow">Assessment</span>
-        <h2>Add exam question</h2>
-
-        <label>Question<input name="questionText" required/></label>
-        {["A","B","C","D"].map(option=>
-          <label key={option}>Option {option}<input name={`option${option}`} required/></label>
-        )}
-
-        <label>Correct answer
-          <select name="correctOption">
-            <option>A</option>
-            <option>B</option>
-            <option>C</option>
-            <option>D</option>
-          </select>
-        </label>
-
-        <button className="btn primary" type="submit">Add question</button>
-      </form>
-    </div>
-
-    <article className="card table">
-      <h2>Registered Enumerators</h2>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>State</th>
-            <th>Enumerator ID</th>
-            <th>Status</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {enumerators.map((item,index)=>
-            <tr key={item.id??index}>
-              <td>{item.fullName}</td>
-              <td>{item.email}</td>
-              <td>{item.phone}</td>
-              <td>{item.state}</td>
-              <td>{item.enumeratorCode||"-"}</td>
-              <td>{item.status}</td>
-              <td>{item.examScore==null?"-":`${item.examScore}%`}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </article>
+        <article className="card infoCard">
+          <span className="eyebrow">How field access works</span>
+          <h2>Controlled participant registration</h2>
+          <ol>
+            <li>Enumerator completes payment and training.</li>
+            <li>Enumerator passes the qualification assessment.</li>
+            <li>You activate the current field access code.</li>
+            <li>Qualified Enumerators receive the participant-platform link and code.</li>
+            <li>Rotating the code invalidates the previous active code.</li>
+          </ol>
+        </article>
+      </div>
+    }
   </section>;
 }
 
