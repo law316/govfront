@@ -14,7 +14,7 @@ function Layout({children}:{children:React.ReactNode}){
         <span className="mark">ER</span>
         <span>
           <b>{PORTAL_NAME}</b>
-          <small>Recruit â€¢ Train â€¢ Qualify â€¢ Deploy</small>
+          <small>Recruit - Train - Qualify - Deploy</small>
         </span>
       </Link>
 
@@ -53,7 +53,7 @@ function Layout({children}:{children:React.ReactNode}){
 function Guard({role,children}:{role?:Role;children:React.ReactNode}){
   const{user,ready}=useAuth();
 
-  if(!ready)return <div className="card center">Checking secure sessionâ€¦</div>;
+  if(!ready)return <div className="card center">Checking secure session...</div>;
   if(!user)return <Navigate to="/login" replace/>;
   if(role&&user.role!==role)return <Navigate to="/" replace/>;
 
@@ -297,7 +297,7 @@ function EnumeratorDash(){
     }
   }
 
-  if(!data&&!error)return <div className="card center">Loading Enumerator dashboardâ€¦</div>;
+  if(!data&&!error)return <div className="card center">Loading Enumerator dashboard...</div>;
 
   return <section className="section">
     <div className="dashHead">
@@ -513,7 +513,7 @@ function Admin(){
       <div className="stats">
         <div><small>Registered Enumerators</small><b>{stats.enumerators}</b></div>
         <div><small>Qualified</small><b>{stats.qualifiedEnumerators}</b></div>
-        <div><small>Verified payments</small><b>â‚¦{Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</b></div>
+        <div><small>Verified payments</small><b>NGN {Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</b></div>
       </div>
     }
 
@@ -593,9 +593,9 @@ function Admin(){
               <td>{item.email}</td>
               <td>{item.phone}</td>
               <td>{item.state}</td>
-              <td>{item.enumeratorCode||"â€”"}</td>
+              <td>{item.enumeratorCode||"-"}</td>
               <td>{item.status}</td>
-              <td>{item.examScore==null?"â€”":`${item.examScore}%`}</td>
+              <td>{item.examScore==null?"-":`${item.examScore}%`}</td>
             </tr>
           )}
         </tbody>
@@ -606,7 +606,7 @@ function Admin(){
 
 function Callback(){
   const[params]=useSearchParams();
-  const[message,setMessage]=useState("Verifying paymentâ€¦");
+  const[message,setMessage]=useState("Verifying payment...");
   const{user}=useAuth();
 
   useEffect(()=>{
