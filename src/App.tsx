@@ -3,6 +3,8 @@ import {FormEvent,useEffect,useMemo,useState} from "react";
 import {AuthProvider,useAuth,Role} from "./Auth";
 import {api,download} from "./api";
 import AdminParticipants from "./AdminParticipants";
+import AdminOperations from "./AdminOperations";
+import ProgrammeNoticeBoard from "./ProgrammeNoticeBoard";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
 
@@ -78,7 +80,11 @@ function Layout({children}:{children:React.ReactNode}){
             {!user&&<NavLink to="/register">Enumerator Registration</NavLink>}
             {!user&&<NavLink to="/login">Login</NavLink>}
             {user?.role==="ENUMERATOR"&&<NavLink to="/enumerator">Enumerator Dashboard</NavLink>}
-            {user?.role==="ADMIN"&&<NavLink to="/admin">Administration</NavLink>}
+            {user?.role==="ADMIN"&&<>
+              <NavLink to="/admin">Administration</NavLink>
+              <NavLink to="/admin/participants">Participants</NavLink>
+              <NavLink to="/admin/operations">Operations</NavLink>
+            </>}
           </nav>
 
           {user&&<div className="topActions">
@@ -462,6 +468,8 @@ function EnumeratorDash(){
     {error&&<div className="error">{error}</div>}
     {message&&<div className="success">{message}</div>}
 
+    <ProgrammeNoticeBoard/>
+
     {data&&<>
       <div className="featureGrid three">
         <article className="card profileCard">
@@ -746,9 +754,19 @@ function Admin(){
       </div>
       <StatusPill value="ADMIN ONLY"/>
     </div>
-
     {error&&<div className="error">{error}</div>}
     {message&&<div className="success">{message}</div>}
+
+    <div className="adminLaunchGrid">
+      <article className="card adminLaunchCard">
+        <div><span className="eyebrow">Participant administration</span><h3>Participant records & programme review</h3><p>Materials, assessments, registration progress and business-plan review.</p></div>
+        <Link className="btn secondary small" to="/admin/participants">Open participants</Link>
+      </article>
+      <article className="card adminLaunchCard">
+        <div><span className="eyebrow">Programme operations</span><h3>Timeline, announcements, payments & accounts</h3><p>Set deadlines, publish notices, handle payment exceptions and manage active accounts.</p></div>
+        <Link className="btn secondary small" to="/admin/operations">Open operations</Link>
+      </article>
+    </div>
 
     <div className="adminTabs" role="tablist" aria-label="Admin sections">
       <button className={activeTab==="overview"?"active":""} type="button" onClick={()=>setActiveTab("overview")}>Overview</button>
@@ -1013,6 +1031,7 @@ export default function App(){
           <Route path="/enumerators/register" element={<Navigate to="/register" replace/>}/>
           <Route path="/enumerator" element={<Guard role="ENUMERATOR"><EnumeratorDash/></Guard>}/>
           <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>
+          <Route path="/admin/operations" element={<Guard role="ADMIN"><AdminOperations/></Guard>}/>
           <Route path="/admin" element={<Guard role="ADMIN"><Admin/></Guard>}/>
           <Route path="/payment/callback" element={<Guard><Callback/></Guard>}/>
 
