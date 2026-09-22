@@ -2,6 +2,7 @@ import {BrowserRouter,Link,NavLink,Navigate,Route,Routes,useLocation,useNavigate
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {AuthProvider,useAuth,Role} from "./Auth";
 import {api,download} from "./api";
+import AdminParticipants from "./AdminParticipants";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
 
@@ -741,7 +742,7 @@ function Admin(){
       <div>
         <span className="eyebrow">Administration</span>
         <h1>Programme Administration</h1>
-        <p>Manage Enumerator records, payments, training materials, assessment questions and field access codes.</p>
+        <p>Manage Enumerator records, participant operations, payments, training materials, assessments and field access codes.</p>
       </div>
       <StatusPill value="ADMIN ONLY"/>
     </div>
@@ -751,6 +752,7 @@ function Admin(){
 
     <div className="adminTabs" role="tablist" aria-label="Admin sections">
       <button className={activeTab==="overview"?"active":""} type="button" onClick={()=>setActiveTab("overview")}>Overview</button>
+      <Link className="participantAdminTab" to="/admin/participants">Participants</Link>
       <button className={activeTab==="payments"?"active":""} type="button" onClick={()=>setActiveTab("payments")}>
         Payments {pendingPayments>0&&<span className="tabCount">{pendingPayments}</span>}
       </button>
@@ -1010,6 +1012,7 @@ export default function App(){
           <Route path="/register" element={<EnumeratorSignup/>}/>
           <Route path="/enumerators/register" element={<Navigate to="/register" replace/>}/>
           <Route path="/enumerator" element={<Guard role="ENUMERATOR"><EnumeratorDash/></Guard>}/>
+          <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>
           <Route path="/admin" element={<Guard role="ADMIN"><Admin/></Guard>}/>
           <Route path="/payment/callback" element={<Guard><Callback/></Guard>}/>
 

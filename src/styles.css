@@ -473,3 +473,191 @@ tbody td{vertical-align:top;padding:16px 0;border-bottom:1px solid #edf2ee;color
   .tableHead{display:block}
   .recordCount{margin-top:10px}
 }
+
+/* Participant administration */
+.adminTabs a.participantAdminTab{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:11px 13px;
+  border-radius:10px;
+  font-weight:800;
+  color:var(--muted);
+}
+.adminTabs a.participantAdminTab:hover{
+  background:var(--greenSoft);
+  color:var(--green);
+}
+
+.participantAdmin{gap:18px}
+.participantAdminHero{align-items:center}
+.adminBackButton{background:#fff!important}
+.participantStatGrid{margin-bottom:0}
+
+.participantTabs{position:sticky;top:91px;z-index:18}
+.participantFilters{
+  display:grid;
+  grid-template-columns:1fr minmax(230px,.75fr) minmax(220px,.55fr);
+  gap:16px;
+  align-items:end;
+}
+.participantFilters h2{margin:7px 0 0}
+.participantFilters label,
+.participantForm label,
+.reviewPanel label{
+  display:grid;
+  gap:8px;
+  font-weight:750;
+  color:#29483a;
+}
+.participantFilters textarea,
+.participantForm textarea,
+.reviewPanel textarea{
+  width:100%;
+  resize:vertical;
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  color:var(--text);
+  font:inherit;
+}
+.participantFilters textarea:focus,
+.participantForm textarea:focus,
+.reviewPanel textarea:focus{
+  outline:none;
+  border-color:#74a88b;
+  box-shadow:0 0 0 3px rgba(10,90,53,.10);
+}
+
+.participantTable{min-width:1160px}
+.status-unlocked,.status-active,.status-reviewed,.status-shortlisted{
+  background:#e2f4e8;
+  color:#14563a;
+}
+.status-inactive,.status-not_shortlisted{
+  background:#edf0ee;
+  color:#5e6c65;
+}
+.status-training_active,.status-plan_pending,.status-plan_submitted,
+.status-under_review,.status-resubmitted{
+  background:#eaf0fb;
+  color:#315b92;
+}
+.status-revision_required,.status-assessment_pending,.status-resources_pending{
+  background:#fff2d8;
+  color:#7b5714;
+}
+
+.participantSplit{
+  display:grid;
+  grid-template-columns:minmax(320px,.72fr) minmax(0,1.28fr);
+  gap:18px;
+  align-items:start;
+}
+.participantForm{
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+  position:sticky;
+  top:162px;
+}
+.participantForm p{margin-top:0}
+.participantListCard{min-width:0}
+.adminHint{
+  font-size:12px;
+  line-height:1.65!important;
+  padding:12px 14px;
+  border-radius:11px;
+  background:#f5f8f6;
+  border:1px solid var(--line);
+}
+
+.businessPlanGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+.businessPlanCard{display:flex;flex-direction:column;gap:17px}
+.businessPlanHeader{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-start;
+}
+.businessPlanHeader h2{margin:8px 0 5px}
+.businessPlanHeader p{margin:0}
+.proposalSummary{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.proposalSummary>div{
+  padding:13px;
+  border:1px solid var(--line);
+  background:#fafcfb;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.proposalSummary small{color:var(--muted)}
+.proposalSummary strong{font-size:13px}
+
+.planDetails{
+  border:1px solid var(--line);
+  border-radius:13px;
+  overflow:hidden;
+  background:#fff;
+}
+.planDetails summary{
+  padding:14px 16px;
+  cursor:pointer;
+  font-weight:850;
+  color:var(--greenDark);
+  background:#f6f9f7;
+}
+.proposalTextGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  padding:16px;
+}
+.proposalTextGrid section{
+  border:1px solid #e8eeea;
+  border-radius:12px;
+  padding:14px;
+  background:#fbfcfb;
+}
+.proposalTextGrid section.wide{grid-column:1/-1}
+.proposalTextGrid h3{margin:0 0 8px;font-size:13px}
+.proposalTextGrid p{margin:0;white-space:pre-wrap}
+
+.reviewPanel{
+  padding:16px;
+  border-radius:14px;
+  background:#f5f9f6;
+  border:1px solid var(--line);
+  display:grid;
+  gap:14px;
+}
+.reviewPanel .btn{justify-self:start}
+
+@media(max-width:1100px){
+  .participantSplit{grid-template-columns:1fr}
+  .participantForm{position:static}
+  .businessPlanGrid{grid-template-columns:1fr}
+  .participantFilters{grid-template-columns:1fr 1fr}
+  .participantFilters>div{grid-column:1/-1}
+}
+@media(max-width:900px){
+  .participantTabs{position:static}
+  .participantFilters{grid-template-columns:1fr}
+  .participantFilters>div{grid-column:auto}
+}
+@media(max-width:700px){
+  .businessPlanHeader{flex-direction:column}
+  .proposalSummary,.proposalTextGrid{grid-template-columns:1fr}
+  .proposalTextGrid section.wide{grid-column:auto}
+  .adminBackButton{width:100%}
+}
