@@ -3,70 +3,37 @@ import {FormEvent,useEffect,useMemo,useState} from "react";
 import {AuthProvider,useAuth,Role} from "./Auth";
 import {api,download} from "./api";
 
-const PORTAL_NAME="Enumerator Recruitment and Training Portal";
-
-const heroSlides=[
-  {
-    image:"https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1400&q=80",
-    eyebrow:"Field workforce development",
-    title:"Recruit, train and qualify Enumerators with a premium digital workflow",
-    text:"A professional Enumerator platform for onboarding, payment validation, guided training, qualification and controlled field deployment.",
-    tags:["Role-based access","Secure payment verification","Structured qualification"]
-  },
-  {
-    image:"https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1400&q=80",
-    eyebrow:"Youth empowerment",
-    title:"Create a credible, modern experience that feels serious and trustworthy",
-    text:"Present the programme with a polished Nigerian-focused look, stronger structure, cleaner navigation and premium mobile responsiveness.",
-    tags:["Responsive layouts","Mature visual hierarchy","Clear call-to-actions"]
-  },
-  {
-    image:"https://images.unsplash.com/photo-1524492449090-1abe8ff79a8d?auto=format&fit=crop&w=1400&q=80",
-    eyebrow:"Farmer and community outreach",
-    title:"Prepare qualified Enumerators before they begin participant registration",
-    text:"Only trained and verified Enumerators should move into field operations, receive access codes and open the second registration platform.",
-    tags:["Training library","Assessment flow","Access-code control"]
-  }
-];
-
-const trustItems=[
-  {label:"Secure roles",value:"Admin, Enumerator"},
-  {label:"Payment control",value:"Flutterwave verified"},
-  {label:"Qualification route",value:"Train, test, qualify"},
-  {label:"Deployment control",value:"Rotating access codes"}
-];
+const PORTAL_NAME="National Enterprise & Skills Support Portal";
 
 const steps=[
   {
-    title:"Create Enumerator account",
-    text:"Collect name, contact, location and passport photograph in a structured registration flow."
+    title:"Enumerator Registration",
+    text:"Create your Enumerator profile and submit the required identification details."
   },
   {
-    title:"Unlock training access",
-    text:"Enumerator completes the approved payment step before materials and assessments become available."
+    title:"Training Access",
+    text:"Complete the approved registration payment to unlock programme materials."
   },
   {
-    title:"Study and qualify",
-    text:"Training documents and test questions are managed by the administrator, then completed from the dashboard."
+    title:"Assessment",
+    text:"Study the published materials and complete the Enumerator qualification test."
   },
   {
-    title:"Deploy to field registration",
-    text:"Qualified Enumerators receive their Enumerator ID, active field code and the link to the second platform."
+    title:"Field Deployment",
+    text:"Qualified Enumerators receive an Enumerator ID, active access code and participant registration link."
   }
 ];
 
-const promiseCards=[
+const programmeAreas=[
   {
-    title:"Nigerian youth and farmer focus",
-    text:"The interface projects energy, trust and empowerment with realistic support-themed visuals and a stronger local tone."
+    image:"/images/nigeria-youth-professionals.jpg",
+    title:"Youth Enterprise & Digital Skills",
+    text:"Supporting organised outreach to young Nigerians interested in practical skills and enterprise opportunities."
   },
   {
-    title:"Administrator control",
-    text:"Only the configured ADMIN account can verify payments, publish materials, create exams and rotate access codes."
-  },
-  {
-    title:"Mobile-first discipline",
-    text:"Layouts, buttons, tables and dashboards remain readable on smaller screens instead of looking squeezed and unstable."
+    image:"/images/nigeria-farmers.jpg",
+    title:"Agriculture & Community Outreach",
+    text:"Supporting field registration and programme access for farmers and communities."
   }
 ];
 
@@ -78,13 +45,17 @@ function Layout({children}:{children:React.ReactNode}){
   useEffect(()=>{setOpen(false);},[location.pathname]);
 
   return <div className="siteShell">
+    <div className="nationalBand" aria-hidden="true">
+      <span/><span/><span/>
+    </div>
+
     <header className="topbar">
       <div className="topbarInner">
         <Link className="brand" to="/">
-          <span className="brandMark">ER</span>
+          <span className="brandSeal">NES</span>
           <span className="brandText">
             <b>{PORTAL_NAME}</b>
-            <small>Premium Enumerator operations workflow</small>
+            <small>Enumerator Recruitment & Training</small>
           </span>
         </Link>
 
@@ -103,17 +74,15 @@ function Layout({children}:{children:React.ReactNode}){
         <div className={`navWrap ${open?"open":""}`}>
           <nav className="mainNav">
             <NavLink to="/">Home</NavLink>
-            {!user&&<NavLink to="/register">Become an Enumerator</NavLink>}
-            {!user&&<NavLink to="/login">Sign in</NavLink>}
-            {user?.role==="ENUMERATOR"&&<NavLink to="/enumerator">Dashboard</NavLink>}
-            {user?.role==="ADMIN"&&<NavLink to="/admin">Admin Console</NavLink>}
+            {!user&&<NavLink to="/register">Enumerator Registration</NavLink>}
+            {!user&&<NavLink to="/login">Login</NavLink>}
+            {user?.role==="ENUMERATOR"&&<NavLink to="/enumerator">Enumerator Dashboard</NavLink>}
+            {user?.role==="ADMIN"&&<NavLink to="/admin">Administration</NavLink>}
           </nav>
 
-          <div className="topActions">
-            {!user&&<Link className="btn secondary small" to="/register">Get started</Link>}
-            {!user&&<Link className="btn primary small" to="/login">Secure sign in</Link>}
-            {user&&<button className="btn outline small" type="button" onClick={()=>void logout()}>Sign out</button>}
-          </div>
+          {user&&<div className="topActions">
+            <button className="btn outline small" type="button" onClick={()=>void logout()}>Sign out</button>
+          </div>}
         </div>
       </div>
     </header>
@@ -124,11 +93,11 @@ function Layout({children}:{children:React.ReactNode}){
       <div className="footerInner">
         <div>
           <b>{PORTAL_NAME}</b>
-          <p>Enumerator onboarding, secure payment verification, training, testing and field access management.</p>
+          <p>Enumerator registration, training, assessment and field access.</p>
         </div>
         <div className="footerNote">
-          <span>Professional role-based access</span>
-          <span>Premium responsive interface</span>
+          <span>Enumerator Portal</span>
+          <span>Administration Portal</span>
         </div>
       </div>
     </footer>
@@ -154,74 +123,64 @@ function SectionIntro({eyebrow,title,text}:{eyebrow:string;title:string;text?:st
 }
 
 function Home(){
-  const[index,setIndex]=useState(0);
-  const slide=heroSlides[index];
-
-  useEffect(()=>{
-    const timer=window.setInterval(()=>setIndex(v=>(v+1)%heroSlides.length),5500);
-    return()=>window.clearInterval(timer);
-  },[]);
-
   return <>
-    <section className="heroPanel">
-      <div className="heroCopy">
-        <span className="eyebrow">{slide.eyebrow}</span>
-        <h1>{slide.title}</h1>
-        <p>{slide.text}</p>
-
-        <div className="heroActions">
-          <Link className="btn primary" to="/register">Register as Enumerator</Link>
-          <Link className="btn secondary" to="/login">Open secure portal</Link>
-        </div>
-
-        <div className="tagRow">
-          {slide.tags.map(tag=><span key={tag} className="tag">{tag}</span>)}
-        </div>
-
-        <div className="heroStats">
-          {trustItems.map(item=>
-            <article key={item.label} className="metricCard">
-              <small>{item.label}</small>
-              <strong>{item.value}</strong>
-            </article>
-          )}
-        </div>
-
-        <div className="heroDots" aria-label="Hero slides">
-          {heroSlides.map((item,i)=>
-            <button
-              key={item.title}
-              type="button"
-              className={i===index?"active":""}
-              aria-label={`Show slide ${i+1}`}
-              onClick={()=>setIndex(i)}
-            />
-          )}
+    <section className="nationalHero">
+      <div className="nationalHeroImage">
+        <img src="/images/nigeria-farmers.jpg" alt="Nigerian farmers during a field harvest"/>
+        <div className="imageCaption">
+          <span>Enumerator Recruitment</span>
+          <strong>Supporting access across communities</strong>
         </div>
       </div>
 
-      <div className="heroMedia">
-        <div className="heroImageFrame">
-          <img src={slide.image} alt={slide.title}/>
-          <div className="heroOverlayCard">
-            <span className="eyebrow">Field readiness</span>
-            <h3>From onboarding to deployment</h3>
-            <p>Designed for a credible programme experience that looks premium on desktop and mobile.</p>
-          </div>
+      <div className="nationalHeroContent">
+        <span className="portalKicker">National Enterprise & Skills Support Portal</span>
+        <h1>Enumerator Recruitment & Training</h1>
+        <p className="heroLead">
+          Register as an Enumerator, complete the required training and assessment, and receive field access after qualification.
+        </p>
+
+        <div className="heroActions nationalActions">
+          <Link className="btn primary" to="/register">Register as Enumerator</Link>
+          <Link className="btn outline" to="/login">Enumerator Login</Link>
         </div>
+
+        <div className="heroNotice">
+          <strong>Enumerator Portal</strong>
+          <p>Participant registration is handled on a separate platform after Enumerator qualification.</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="quickAccess" aria-label="Programme access">
+      <div>
+        <small>01</small>
+        <span>Register</span>
+      </div>
+      <div>
+        <small>02</small>
+        <span>Complete Training</span>
+      </div>
+      <div>
+        <small>03</small>
+        <span>Take Assessment</span>
+      </div>
+      <div>
+        <small>04</small>
+        <span>Receive Field Access</span>
       </div>
     </section>
 
     <section className="section">
       <SectionIntro
-        eyebrow="Process clarity"
-        title="A clean pathway that feels professional from the first screen"
-        text="The platform keeps onboarding, training, assessment and deployment in one structured workflow so Enumerators clearly understand what happens next."
+        eyebrow="Enumerator Process"
+        title="How the programme works"
+        text="Complete each stage in sequence before moving into field registration."
       />
 
-      <div className="featureGrid four">
+      <div className="featureGrid four processGrid">
         {steps.map((step,i)=>
-          <article key={step.title} className="card featureCard">
+          <article key={step.title} className="card processCard">
             <span className="stepBadge">0{i+1}</span>
             <h3>{step.title}</h3>
             <p>{step.text}</p>
@@ -230,21 +189,33 @@ function Home(){
       </div>
     </section>
 
-    <section className="section altSection">
+    <section className="section programmeSection">
       <SectionIntro
-        eyebrow="Experience promise"
-        title="Built to look mature, serious and trustworthy"
-        text="The portal now leans into premium structure, improved spacing, stronger visual hierarchy and realistic support-focused imagery."
+        eyebrow="Programme Reach"
+        title="Supporting youth, enterprise and communities"
+        text="Qualified Enumerators help extend programme registration and support access across different communities."
       />
 
-      <div className="featureGrid three">
-        {promiseCards.map(card=>
-          <article key={card.title} className="card toneCard">
-            <h3>{card.title}</h3>
-            <p>{card.text}</p>
+      <div className="programmeGrid">
+        {programmeAreas.map(area=>
+          <article key={area.title} className="programmeCard">
+            <img src={area.image} alt={area.title}/>
+            <div>
+              <h3>{area.title}</h3>
+              <p>{area.text}</p>
+            </div>
           </article>
         )}
       </div>
+    </section>
+
+    <section className="closingBanner">
+      <div>
+        <span className="eyebrow">Enumerator Recruitment</span>
+        <h2>Ready to begin?</h2>
+        <p>Create your Enumerator account and continue from your dashboard.</p>
+      </div>
+      <Link className="btn primary" to="/register">Start Registration</Link>
     </section>
   </>;
 }
@@ -256,7 +227,7 @@ function AuthShell({eyebrow,title,description,asideTitle,asideText,bullets,child
       <h1>{title}</h1>
       <p>{description}</p>
       <div className="authVisual">
-        <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1200&q=80" alt="Young African team planning community support work"/>
+        <img src="/images/nigeria-youth-professionals.jpg" alt="Nigerian professionals working together"/>
       </div>
     </div>
 
@@ -296,14 +267,14 @@ function Login(){
 
   return <AuthShell
     eyebrow="Secure access"
-    title="Sign in to the premium operations portal"
-    description="Administrators and Enumerators use one secure login and are routed only to the controls their roles allow."
-    asideTitle="Professional access control"
-    asideText="This portal is designed to keep the workflow clean. Enumerators access only their dashboard. The administrator alone sees programme controls."
+    title="Enumerator and Administration Login"
+    description="Enter your registered email address and password to continue."
+    asideTitle="Portal Access"
+    asideText="Enumerators access their training dashboard. Administration controls remain restricted to the administrator account."
     bullets={[
       "Role-based routing after login",
       "Protected admin operations",
-      "Clean mobile and desktop sign-in experience"
+      "Access your account from desktop or mobile"
     ]}
   >
     <form className="form" onSubmit={submit}>
@@ -355,12 +326,12 @@ function EnumeratorSignup(){
 
   return <AuthShell
     eyebrow="Enumerator onboarding"
-    title="Create a polished Enumerator profile"
-    description="Register once, complete payment, access study materials, take the qualifying test and become ready for field deployment."
-    asideTitle="What happens after registration"
-    asideText="This is not a loose sign-up form. It feeds a controlled programme pipeline that leads from onboarding to qualification and then field access."
+    title="Enumerator Registration"
+    description="Complete the form below to create your Enumerator account."
+    asideTitle="After Registration"
+    asideText="After registration, complete payment, study the training materials and take the qualification assessment."
     bullets={[
-      "Secure training-access payment",
+      "Complete the required registration payment",
       "Administrator-published materials and test",
       "Enumerator ID and field access after qualification"
     ]}
@@ -591,7 +562,7 @@ function EnumeratorDash(){
       </>}
 
       {data.status==="QUALIFIED"&&
-        <article className="panel premiumPanel">
+        <article className="panel fieldAccessPanel">
           <div>
             <span className="eyebrow">Qualified field access</span>
             <h2>You are ready for the second platform</h2>
@@ -735,7 +706,7 @@ function Admin(){
 
     const raw=(transactionIds[txRef]||"").trim();
     if(!raw||!Number.isFinite(Number(raw))||Number(raw)<=0){
-      setError("Enter the Flutterwave transaction ID before verification.");
+      setError("Enter the Payment transaction ID before verification.");
       return;
     }
 
@@ -748,7 +719,7 @@ function Admin(){
       });
 
       if(!response.verified){
-        setError(response.message||"Flutterwave did not verify this payment.");
+        setError(response.message||"The payment provider did not verify this payment.");
         return;
       }
 
@@ -768,9 +739,9 @@ function Admin(){
   return <section className="dashboardShell adminShell">
     <div className="dashboardHero">
       <div>
-        <span className="eyebrow">Private administration</span>
-        <h1>Programme control centre</h1>
-        <p>Manage Enumerator records, verified payments, training assets, assessment questions and access-code rotation from one premium interface.</p>
+        <span className="eyebrow">Administration</span>
+        <h1>Programme Administration</h1>
+        <p>Manage Enumerator records, payments, training materials, assessment questions and field access codes.</p>
       </div>
       <StatusPill value="ADMIN ONLY"/>
     </div>
@@ -794,7 +765,7 @@ function Admin(){
           <article className="card statCard"><small>Registered Enumerators</small><strong>{stats.enumerators}</strong><p>All created Enumerator accounts.</p></article>
           <article className="card statCard"><small>Qualified</small><strong>{stats.qualifiedEnumerators}</strong><p>Enumerators who passed the assessment.</p></article>
           <article className="card statCard"><small>Verified payment value</small><strong>NGN {Number(stats.totalVerifiedPaymentsNgn||0).toLocaleString()}</strong><p>Total verified value.</p></article>
-          <article className="card statCard"><small>Pending payments</small><strong>{pendingPayments}</strong><p>Awaiting Flutterwave verification.</p></article>
+          <article className="card statCard"><small>Pending payments</small><strong>{pendingPayments}</strong><p>Awaiting Payment provider verification.</p></article>
         </div>
       }
 
@@ -854,7 +825,7 @@ function Admin(){
           <div>
             <span className="eyebrow">Payment operations</span>
             <h2>Verify Enumerator payments</h2>
-            <p className="muted">Verification checks Flutterwave before access is granted.</p>
+            <p className="muted">Payment verification is completed before training access is granted.</p>
           </div>
         </div>
 
@@ -870,7 +841,7 @@ function Admin(){
                   <th>Amount</th>
                   <th>Status</th>
                   <th>Provider status</th>
-                  <th>Flutterwave ID</th>
+                  <th>Transaction ID</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -896,7 +867,7 @@ function Admin(){
                           placeholder="Transaction ID"
                           value={transactionIds[payment.txRef]||""}
                           onChange={e=>setTransactionIds(current=>({...current,[payment.txRef]:e.target.value.replace(/\D/g,"")}))}
-                          aria-label={`Flutterwave transaction ID for ${payment.txRef}`}
+                          aria-label={`Payment transaction ID for ${payment.txRef}`}
                         />
                       }
                     </td>
