@@ -9,6 +9,7 @@ import AdminSupport from "./AdminSupport";
 import ProgrammeNoticeBoard from "./ProgrammeNoticeBoard";
 import EnumeratorExamCenter from "./EnumeratorExamCenter";
 import AdminExamBank from "./AdminExamBank";
+import AdminContentControl from "./AdminContentControl";
 import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
@@ -88,6 +89,7 @@ function Layout({children}:{children:React.ReactNode}){
             {user?.role==="ADMIN"&&<>
               <NavLink to="/admin">Administration</NavLink>
               <NavLink to="/admin/exam-bank">Exam Bank</NavLink>
+              <NavLink to="/admin/content-control">Content Control</NavLink>
               <NavLink to="/admin/participants">Participants</NavLink>
               <NavLink to="/admin/operations">Operations</NavLink>
               <NavLink to="/admin/support">Support Inbox</NavLink>
@@ -547,7 +549,7 @@ function EnumeratorDash(){
           </article>
 
           <article className="card examReadyCard">
-            <div className="examReadyIcon">✓</div>
+            <div className="examReadyIcon">âœ“</div>
             <span className="eyebrow">Qualification assessment</span>
             <h2>{data.status==="QUALIFIED"?"Assessment completed":"Take the test when you are ready"}</h2>
             <p>{data.status==="QUALIFIED"
@@ -790,8 +792,12 @@ function Admin(){
         <Link className="btn secondary small" to="/admin/operations">Open operations</Link>
       </article>
       <article className="card adminLaunchCard">
-        <div><span className="eyebrow">Qualification assessment</span><h3>Professional Question Bank</h3><p>Create, edit, review, deactivate and reactivate Enumerator assessment questions without accidental duplicates.</p></div>
+        <div><span className="eyebrow">Qualification assessment</span><h3>Professional Question Bank</h3><p>Create, edit, review, deactivate, reactivate and permanently delete safe assessment questions.</p></div>
         <Link className="btn secondary small" to="/admin/exam-bank">Open question bank</Link>
+      </article>
+      <article className="card adminLaunchCard">
+        <div><span className="eyebrow">Master content control</span><h3>Edit, archive or permanently delete content</h3><p>Manage Enumerator resources, Participant resources/questions, announcements, access codes and timeline reset controls.</p></div>
+        <Link className="btn secondary small" to="/admin/content-control">Open content control</Link>
       </article>
     </div>
 
@@ -957,7 +963,7 @@ function Admin(){
         </form>
 
         <article className="card examAdminLaunch">
-          <div className="examAdminLaunchIcon">✓</div>
+          <div className="examAdminLaunchIcon">âœ“</div>
           <span className="eyebrow">Qualification assessment</span>
           <h2>Manage the professional question bank</h2>
           <p>Review existing questions before adding new ones, edit mistakes, archive outdated questions and prevent duplicate entries.</p>
@@ -1075,6 +1081,7 @@ export default function App(){
           <Route path="/enumerator" element={<Guard role="ENUMERATOR"><EnumeratorDash/></Guard>}/>
           <Route path="/enumerator/exam" element={<Guard role="ENUMERATOR"><EnumeratorExamCenter/></Guard>}/>
           <Route path="/admin/exam-bank" element={<Guard role="ADMIN"><AdminExamBank/></Guard>}/>
+          <Route path="/admin/content-control" element={<Guard role="ADMIN"><AdminContentControl/></Guard>}/>
           <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>
           <Route path="/admin/operations" element={<Guard role="ADMIN"><AdminOperations/></Guard>}/>
           <Route path="/admin/support" element={<Guard role="ADMIN"><AdminSupport/></Guard>}/>

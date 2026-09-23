@@ -86,77 +86,118 @@ export default function AdminExamBank(){
     finally{setBusy("");}
   }
 
-  const activeCount=questions.filter(q=>q.active).length;
+  async function permanentDelete(item:Question){
+    const typed=window.prompt(`Permanently delete Question #${item.id}? This is only allowed when it is not required by an existing exam session. Type DELETE to continue.`);
+    if(typed!=="DELETE")return;
+    setBusy(`delete:${item.id}`);setError("");setMessage("");
+    try{
+      await api(`/api/admin/exam-bank/questions/${item.id}/permanent?confirm=DELETE`,{method:"DELETE"});
+      if(draft.id===item.id)setDraft({...emptyDraft});
+      setMessage("Question permanently deleted.");
+      await load();
+    }catch(err){
+      setError(err instanceof Error?err.message:"Permanent deletion was blocked because this question is still required by exam history.");
+    }finally{setBusy("");}
+  }
 
-  return <section className="dashboardShell adminShell examBankShell">
-    <div className="dashboardHero">
+  const activeCount=questions.filter(q=>q.active).length;
+  const previewOptions=[
+    ["A",draft.optionA],["B",draft.optionB],["C",draft.optionC],["D",draft.optionD]
+  ] as const;
+
+  return <section className="dashboardShell adminShell examBankShell assessmentBuilderShell">
+    <div className="dashboardHero assessmentBuilderHero">
       <div>
-        <span className="eyebrow">Administration / Assessment</span>
-        <h1>Enumerator Question Bank</h1>
-        <p>Create, review and maintain a professional qualification assessment without duplicating questions.</p>
+        <span className="eyebrow">Administration / Assessment Builder</span>
+        <h1>Enumerator Qualification Form</h1>
+        <p>Build the assessment like a professional survey: clear question wording, four answer choices, controlled publishing and safe deletion.</p>
       </div>
       <Link className="btn outline small" to="/admin">Back to administration</Link>
     </div>
 
     {error&&<div className="error">{error}</div>}
     {message&&<div className="success">{message}</div>}
-    {busy&&<div className="busyNotice"><span className="spinner"/>Saving assessment changes...</div>}
+    {busy&&<div className="busyNotice"><span className="spinner"/>Processing assessment changes...</div>}
 
     <div className="featureGrid three">
       <article className="card statCard"><small>Total questions</small><strong>{questions.length}</strong><p>All active and archived records.</p></article>
-      <article className="card statCard"><small>Active in exam</small><strong>{activeCount}</strong><p>Included when a new timed session begins.</p></article>
+      <article className="card statCard"><small>Published</small><strong>{activeCount}</strong><p>Available to new exam sessions.</p></article>
       <article className="card statCard"><small>Archived</small><strong>{questions.length-activeCount}</strong><p>Preserved but excluded from new attempts.</p></article>
     </div>
 
-    <div className="examBankLayout">
-      <form className="card formCard examEditor" onSubmit={save}>
-        <div className="tableHead">
-          <div><span className="eyebrow">{draft.id?"Edit question":"New question"}</span><h2>{draft.id?`Question #${draft.id}`:"Create assessment question"}</h2></div>
+    <div className="assessmentBuilderGrid">
+      <form className="card formCard assessmentQuestionEditor" onSubmit={save}>
+        <div className="assessmentEditorHeader">
+          <div>
+            <span className="eyebrow">{draft.id?"Editing question":"Question builder"}</span>
+            <h2>{draft.id?`Question #${draft.id}`:"Create a new question"}</h2>
+            <p>Write the question exactly as the Enumerator should see it during the assessment.</p>
+          </div>
           {draft.id&&<button type="button" className="btn outline small" onClick={()=>setDraft({...emptyDraft})}>Cancel edit</button>}
         </div>
-        <p>Use one clear question and four distinct answer options. The backend rejects duplicate question text automatically.</p>
-        <label>Question<textarea rows={4} maxLength={900} required value={draft.questionText} onChange={e=>setDraft({...draft,questionText:e.target.value})}/></label>
-        <div className="examOptionEditor">
+
+        <label className="assessmentPromptLabel">Question prompt
+          <textarea rows={4} maxLength={900} required value={draft.questionText} placeholder="Example: Which action best protects participant information during field registration?" onChange={e=>setDraft({...draft,questionText:e.target.value})}/>
+        </label>
+
+        <div className="assessmentOptionBuilder">
           {(["A","B","C","D"] as const).map(letter=>{
             const key=`option${letter}` as "optionA"|"optionB"|"optionC"|"optionD";
-            return <label key={letter}>Option {letter}<input maxLength={400} required value={draft[key]} onChange={e=>setDraft({...draft,[key]:e.target.value})}/></label>;
+            return <label key={letter} className={draft.correctOption===letter?"correctOptionEditor":""}>
+              <span className="optionLetter">{letter}</span>
+              <input maxLength={400} required value={draft[key]} placeholder={`Answer option ${letter}`} onChange={e=>setDraft({...draft,[key]:e.target.value})}/>
+              <button type="button" className="correctChoiceButton" onClick={()=>setDraft({...draft,correctOption:letter})}>{draft.correctOption===letter?"Correct answer":"Mark correct"}</button>
+            </label>;
           })}
         </div>
-        <label>Correct answer
-          <select value={draft.correctOption} onChange={e=>setDraft({...draft,correctOption:e.target.value})}>
-            <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-          </select>
-        </label>
-        <button className="btn primary full" disabled={busy==="save"}>{busy==="save"?"Saving...":draft.id?"Save question changes":"Add question to bank"}</button>
+
+        <div className="assessmentEditorFooter">
+          <span>Correct answer: <strong>{draft.correctOption}</strong></span>
+          <button className="btn primary" disabled={busy==="save"}>{busy==="save"?"Saving...":draft.id?"Save question changes":"Add question to assessment"}</button>
+        </div>
       </form>
 
-      <article className="card examBankList">
-        <div className="examBankTools">
-          <div><span className="eyebrow">Question library</span><h2>Review assessment</h2></div>
-          <label>Search<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search question or option..."/></label>
-          <label>Status<select value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}><option value="ALL">All</option><option value="ACTIVE">Active</option><option value="INACTIVE">Archived</option></select></label>
+      <aside className="card assessmentLivePreview">
+        <span className="eyebrow">Participant-style preview</span>
+        <div className="previewProgress"><span style={{width:"38%"}}/></div>
+        <small>Question preview</small>
+        <h2>{draft.questionText.trim()||"Your question will appear here."}</h2>
+        <div className="previewAnswers">
+          {previewOptions.map(([letter,value])=><div className={draft.correctOption===letter?"correctPreview":""} key={letter}>
+            <b>{letter}</b><span>{value.trim()||`Answer option ${letter}`}</span>
+          </div>)}
         </div>
+        <p>This preview mirrors the clean answer-card experience used in the Exam Centre.</p>
+      </aside>
+    </div>
 
-        {filtered.length===0?<div className="emptyState"><h3>No questions found</h3><p>Add the first qualification question or change the filter.</p></div>:
-        <div className="examQuestionBankCards">
-          {filtered.map((item,index)=><article className={`examBankQuestion ${item.active?"":"inactive"}`} key={item.id}>
-            <div className="examBankQuestionHead">
-              <div><span>#{item.id}</span><strong>{item.questionText}</strong></div>
-              <b className={`statusPill status-${item.active?"active":"inactive"}`}>{item.active?"Active":"Archived"}</b>
-            </div>
-            <div className="examBankOptions">
+    <article className="card assessmentLibrary">
+      <div className="examBankTools">
+        <div><span className="eyebrow">Question library</span><h2>Assessment form</h2><p>Review, edit, archive, reactivate or permanently remove mistakes.</p></div>
+        <label>Search<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search question or answer..."/></label>
+        <label>Status<select value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}><option value="ALL">All</option><option value="ACTIVE">Published</option><option value="INACTIVE">Archived</option></select></label>
+      </div>
+
+      {filtered.length===0?<div className="emptyState"><h3>No questions found</h3><p>Add the first qualification question or change the filter.</p></div>:
+      <div className="assessmentQuestionList">
+        {filtered.map((item,index)=><article className={`assessmentQuestionRow ${item.active?"":"inactive"}`} key={item.id}>
+          <div className="assessmentQuestionNumber"><span>{index+1}</span><small>Q{item.id}</small></div>
+          <div className="assessmentQuestionBody">
+            <div className="assessmentQuestionTitle"><strong>{item.questionText}</strong><b className={`statusPill status-${item.active?"active":"inactive"}`}>{item.active?"Published":"Archived"}</b></div>
+            <div className="assessmentAnswerGrid">
               {(["A","B","C","D"] as const).map(letter=>{
                 const key=`option${letter}` as "optionA"|"optionB"|"optionC"|"optionD";
                 return <div className={item.correctOption===letter?"correct":""} key={letter}><b>{letter}</b><span>{item[key]}</span>{item.correctOption===letter&&<em>Correct</em>}</div>;
               })}
             </div>
-            <div className="actionButtons">
+            <div className="assessmentRowActions">
               <button className="btn outline small" type="button" onClick={()=>beginEdit(item)}>Edit</button>
               <button className="btn outline small" type="button" disabled={busy.endsWith(`:${item.id}`)} onClick={()=>void setActive(item,!item.active)}>{item.active?"Deactivate":"Reactivate"}</button>
+              <button className="btn danger small" type="button" disabled={busy===`delete:${item.id}`} onClick={()=>void permanentDelete(item)}>{busy===`delete:${item.id}`?"Deleting...":"Delete permanently"}</button>
             </div>
-          </article>)}
-        </div>}
-      </article>
-    </div>
+          </div>
+        </article>)}
+      </div>}
+    </article>
   </section>;
 }
