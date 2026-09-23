@@ -614,26 +614,51 @@ function Admin(){
   const load=async()=>{
     setError("");
 
-    try{
-      const[summary,registry,paymentRows]=await Promise.all([
-        api<any>("/api/admin/stats"),
-        api<any[]>("/api/admin/enumerators"),
-        api<any[]>("/api/admin/payments")
-      ]);
+    const[summaryResult,registryResult,paymentsResult]=await Promise.allSettled([
+      api<any>("/api/admin/operations/summary"),
+      api<any[]>("/api/admin/operations/enumerators"),
+      api<any[]>("/api/admin/payment-controls")
+    ]);
 
-      setStats(summary);
-      setEnumerators(registry);
-      setPayments(paymentRows);
+    const problems:string[]=[];
 
-      const providerIds:Record<string,string>={};
-      paymentRows.forEach(payment=>{
-        if(payment.providerTransactionId){
-          providerIds[payment.txRef]=String(payment.providerTransactionId);
-        }
-      });
-      setTransactionIds(current=>({...providerIds,...current}));
-    }catch(err){
-      setError(err instanceof Error?err.message:"Could not load administration data");
+    const registry=registryResult.status==="fulfilled"?registryResult.value:[];
+    const paymentRows=paymentsResult.status==="fulfilled"?paymentsResult.value:[];
+    const operationSummary=summaryResult.status==="fulfilled"?summaryResult.value:null;
+
+    if(summaryResult.status==="rejected"){
+      problems.push(summaryResult.reason instanceof Error?summaryResult.reason.message:"Could not load programme summary.");
+    }
+    if(registryResult.status==="rejected"){
+      problems.push(registryResult.reason instanceof Error?registryResult.reason.message:"Could not load Enumerator registry.");
+    }
+    if(paymentsResult.status==="rejected"){
+      problems.push(paymentsResult.reason instanceof Error?paymentsResult.reason.message:"Could not load payment records.");
+    }
+
+    setEnumerators(registry);
+    setPayments(paymentRows);
+
+    const verifiedTotal=paymentRows
+      .filter(payment=>payment.status==="SUCCESSFUL")
+      .reduce((sum,payment)=>sum+Number(payment.amount||0),0);
+
+    setStats({
+      enumerators:operationSummary?.enumeratorsTotal??registry.length,
+      qualifiedEnumerators:operationSummary?.enumeratorsQualified??registry.filter(item=>item.status==="QUALIFIED").length,
+      totalVerifiedPaymentsNgn:verifiedTotal
+    });
+
+    const providerIds:Record<string,string>={};
+    paymentRows.forEach(payment=>{
+      if(payment.providerTransactionId){
+        providerIds[payment.txRef]=String(payment.providerTransactionId);
+      }
+    });
+    setTransactionIds(current=>({...providerIds,...current}));
+
+    if(problems.length){
+      setError(`Some administration data could not be loaded: ${problems.join(" ")}`);
     }
   };
 
@@ -810,6 +835,7 @@ function Admin(){
                   <th>State</th>
                   <th>Enumerator ID</th>
                   <th>Status</th>
+                  <th>Active</th>
                   <th>Score</th>
                 </tr>
               </thead>
@@ -822,6 +848,7 @@ function Admin(){
                     <td>{item.state}</td>
                     <td>{item.enumeratorCode||"-"}</td>
                     <td><StatusPill value={item.status}/></td>
+                    <td>{item.enabled?"Yes":"No"}</td>
                     <td>{item.examScore==null?"-":`${item.examScore}%`}</td>
                   </tr>
                 )}
