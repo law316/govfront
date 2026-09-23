@@ -159,7 +159,7 @@ export default function EnumeratorExamCenter(){
       </div>
 
       <aside className="surveyIntroAside">
-        <div className="surveyShield">✓</div>
+        <div className="surveyShield">{"\u2713"}</div>
         <h3>Secure timed session</h3>
         <p>Your countdown comes from the backend session, not from a fresh browser timer.</p>
         <Link to="/enumerator">Return to training dashboard</Link>
@@ -196,7 +196,7 @@ export default function EnumeratorExamCenter(){
         >
           <span>{index+1}</span>
           <div><strong>Question {index+1}</strong><small>{answers[q.id]?`Answered ${answers[q.id]}`:"Not answered"}</small></div>
-          <em>{answers[q.id]?"✓":"!"}</em>
+          <em>{answers[q.id]?"\u2713":"!"}</em>
         </button>)}
       </div>
 

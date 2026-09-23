@@ -551,7 +551,7 @@ function EnumeratorDash(){
           </article>
 
           <article className="card examReadyCard">
-            <div className="examReadyIcon">Ã¢Å“â€œ</div>
+            <div className="examReadyIcon">{"\u2713"}</div>
             <span className="eyebrow">Qualification assessment</span>
             <h2>{data.status==="QUALIFIED"?"Assessment completed":"Take the test when you are ready"}</h2>
             <p>{data.status==="QUALIFIED"
@@ -969,7 +969,7 @@ function Admin(){
         </form>
 
         <article className="card examAdminLaunch">
-          <div className="examAdminLaunchIcon">Ã¢Å“â€œ</div>
+          <div className="examAdminLaunchIcon">{"\u2713"}</div>
           <span className="eyebrow">Qualification assessment</span>
           <h2>Manage the professional question bank</h2>
           <p>Review existing questions before adding new ones, edit mistakes, archive outdated questions and prevent duplicate entries.</p>

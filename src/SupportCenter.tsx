@@ -100,7 +100,7 @@ export default function SupportCenter(){
     </div>
 
     {selected&&<article className="card conversationCard">
-      <div className="conversationHeader"><div><span className="eyebrow">Support conversation #{selected.id}</span><h2>{selected.subject}</h2><p>{pretty(selected.category)} · {pretty(selected.status)}</p>{selected.paymentTxRef&&<p className="mono">Payment ref: {selected.paymentTxRef}</p>}</div></div>
+      <div className="conversationHeader"><div><span className="eyebrow">Support conversation #{selected.id}</span><h2>{selected.subject}</h2><p>{pretty(selected.category)} - {pretty(selected.status)}</p>{selected.paymentTxRef&&<p className="mono">Payment ref: {selected.paymentTxRef}</p>}</div></div>
       <div className="messageThread">{selected.messages.map(item=><div key={item.id} className={`supportMessage ${item.senderRole==="ADMIN"?"adminMessage":"userMessage"}`}><div><strong>{item.senderRole==="ADMIN"?"Programme Support":item.senderName}</strong><time>{new Date(item.createdAt).toLocaleString()}</time></div><p>{item.message}</p></div>)}</div>
       <form className="replyComposer" onSubmit={sendReply}><textarea rows={4} required value={reply} onChange={e=>setReply(e.target.value)} placeholder="Write a reply..."/><button className="btn primary" disabled={busy==="reply"}>{busy==="reply"?"Sending...":"Send reply"}</button></form>
     </article>}

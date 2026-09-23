@@ -230,8 +230,8 @@ export default function AdminContentControl(){
           const kind=kindForTab();
           const active=Boolean(item.active);
           const details=
-            tab==="participant-questions"?`${label(item.program)}${item.skillTrack?` · ${label(item.skillTrack)}`:""}`:
-            tab==="announcements"?`${label(item.audience)} · ${new Date(item.createdAt).toLocaleString()}`:
+            tab==="participant-questions"?`${label(item.program)}${item.skillTrack?` - ${label(item.skillTrack)}`:""}`:
+            tab==="announcements"?`${label(item.audience)} - ${new Date(item.createdAt).toLocaleString()}`:
             tab==="access"?(item.expiresAt?`Expires ${new Date(item.expiresAt).toLocaleString()}`:"No expiry"):
             item.originalFilename||item.description||"-";
           return <tr key={`${tab}:${item.id}`}>

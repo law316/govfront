@@ -549,7 +549,7 @@ export default function AdminParticipants(){
                 <div>
                   <span className="eyebrow">{plan.participantCode||"Participant"}</span>
                   <h2>{plan.businessName||"Business proposal"}</h2>
-                  <p><strong>{plan.participantName}</strong> ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· {plan.participantEmail}</p>
+                  <p><strong>{plan.participantName}</strong> - {plan.participantEmail}</p>
                 </div>
                 <Status value={plan.status}/>
               </div>
