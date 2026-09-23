@@ -9,23 +9,35 @@ const skillTracks=[
   "WEB_DEVELOPMENT",
   "MOBILE_APP_DEVELOPMENT",
   "SOFTWARE_ENGINEERING_FOUNDATIONS",
+  "PYTHON_PROGRAMMING",
+  "JAVA_SPRING_BOOT",
+  "REACT_FRONTEND_DEVELOPMENT",
+  "QA_SOFTWARE_TESTING",
+  "DATABASE_MANAGEMENT_SQL",
   "DATA_ANALYSIS",
   "DATA_SCIENCE",
   "UI_UX_DESIGN",
   "DIGITAL_MARKETING",
   "GRAPHIC_DESIGN",
+  "SOCIAL_MEDIA_CONTENT_STRATEGY",
+  "VIDEO_EDITING_CONTENT_PRODUCTION",
   "CYBERSECURITY_FUNDAMENTALS",
+  "NETWORKING_IT_SUPPORT",
   "CLOUD_COMPUTING",
   "CLOUD_ENGINEERING",
   "DEVOPS_ENGINEERING",
   "AI_PRODUCTIVITY_TOOLS",
+  "NO_CODE_AUTOMATION",
   "PRODUCT_MANAGEMENT",
   "PROJECT_MANAGEMENT",
   "BUSINESS_ANALYSIS",
   "CUSTOMER_SERVICE",
+  "SALES_CRM",
+  "ACCOUNTING_BOOKKEEPING_DIGITAL_FINANCE",
+  "E_COMMERCE_DIGITAL_RETAIL",
   "ENTREPRENEURSHIP_FOUNDATIONS",
-  "VIDEO_EDITING_CONTENT_PRODUCTION",
-  "VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS"
+  "VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS",
+  "TECHNICAL_WRITING_DOCUMENTATION"
 ];
 
 const reviewStatuses=[
@@ -537,7 +549,7 @@ export default function AdminParticipants(){
                 <div>
                   <span className="eyebrow">{plan.participantCode||"Participant"}</span>
                   <h2>{plan.businessName||"Business proposal"}</h2>
-                  <p><strong>{plan.participantName}</strong> Ãƒâ€šÃ‚· {plan.participantEmail}</p>
+                  <p><strong>{plan.participantName}</strong> ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· {plan.participantEmail}</p>
                 </div>
                 <Status value={plan.status}/>
               </div>

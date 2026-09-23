@@ -35,11 +35,15 @@ type Summary={
 
 const skillTracks=[
   "WEB_DEVELOPMENT","MOBILE_APP_DEVELOPMENT","SOFTWARE_ENGINEERING_FOUNDATIONS",
-  "DATA_ANALYSIS","DATA_SCIENCE","UI_UX_DESIGN","DIGITAL_MARKETING","GRAPHIC_DESIGN",
-  "CYBERSECURITY_FUNDAMENTALS","CLOUD_COMPUTING","CLOUD_ENGINEERING","DEVOPS_ENGINEERING",
-  "AI_PRODUCTIVITY_TOOLS","PRODUCT_MANAGEMENT","PROJECT_MANAGEMENT","BUSINESS_ANALYSIS",
-  "CUSTOMER_SERVICE","ENTREPRENEURSHIP_FOUNDATIONS","VIDEO_EDITING_CONTENT_PRODUCTION",
-  "VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS"
+  "PYTHON_PROGRAMMING","JAVA_SPRING_BOOT","REACT_FRONTEND_DEVELOPMENT","QA_SOFTWARE_TESTING",
+  "DATABASE_MANAGEMENT_SQL","DATA_ANALYSIS","DATA_SCIENCE","UI_UX_DESIGN","DIGITAL_MARKETING",
+  "GRAPHIC_DESIGN","SOCIAL_MEDIA_CONTENT_STRATEGY","VIDEO_EDITING_CONTENT_PRODUCTION",
+  "CYBERSECURITY_FUNDAMENTALS","NETWORKING_IT_SUPPORT","CLOUD_COMPUTING","CLOUD_ENGINEERING",
+  "DEVOPS_ENGINEERING","AI_PRODUCTIVITY_TOOLS","NO_CODE_AUTOMATION","PRODUCT_MANAGEMENT",
+  "PROJECT_MANAGEMENT","BUSINESS_ANALYSIS","CUSTOMER_SERVICE","SALES_CRM",
+  "ACCOUNTING_BOOKKEEPING_DIGITAL_FINANCE","E_COMMERCE_DIGITAL_RETAIL",
+  "ENTREPRENEURSHIP_FOUNDATIONS","VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS",
+  "TECHNICAL_WRITING_DOCUMENTATION"
 ];
 
 function label(value?:string|null){
@@ -130,8 +134,8 @@ export default function AdminOperations(){
   },[participants,participantFilter,accountSearch]);
 
   const manualTargets=manualPurpose==="ENUMERATOR_REGISTRATION"
-    ?enumerators.map(x=>({id:x.id,label:`${x.fullName} Ãƒâ€šÃ‚· ${x.enumeratorCode||"No ID"} Ãƒâ€šÃ‚· ${label(x.status)}`}))
-    :participants.map(x=>({id:x.id,label:`${x.fullName} Ãƒâ€šÃ‚· ${x.participantCode} Ãƒâ€šÃ‚· ${label(x.participantStatus)}`}));
+    ?enumerators.map(x=>({id:x.id,label:`${x.fullName} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· ${x.enumeratorCode||"No ID"} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· ${label(x.status)}`}))
+    :participants.map(x=>({id:x.id,label:`${x.fullName} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· ${x.participantCode} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· ${label(x.participantStatus)}`}));
 
   async function saveDeadline(e:FormEvent){
     e.preventDefault();
@@ -495,9 +499,9 @@ export default function AdminOperations(){
 
     {tab==="accounts"&&<>
       {summary&&<div className="featureGrid four">
-        <article className="card statCard"><small>Enumerators</small><strong>{summary.enumeratorsTotal}</strong><p>{summary.enumeratorsQualified} qualified Ãƒâ€šÃ‚· {summary.enumeratorsPendingPayment} payment pending</p></article>
+        <article className="card statCard"><small>Enumerators</small><strong>{summary.enumeratorsTotal}</strong><p>{summary.enumeratorsQualified} qualified ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· {summary.enumeratorsPendingPayment} payment pending</p></article>
         <article className="card statCard"><small>Enumerator suspended</small><strong>{summary.enumeratorsSuspended}</strong><p>Removed from active login until reactivated.</p></article>
-        <article className="card statCard"><small>Participants</small><strong>{summary.participantsTotal}</strong><p>{summary.participantsRegistrationPending} registration pending Ãƒâ€šÃ‚· {summary.participantsResourcesPending} resources pending</p></article>
+        <article className="card statCard"><small>Participants</small><strong>{summary.participantsTotal}</strong><p>{summary.participantsRegistrationPending} registration pending ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· {summary.participantsResourcesPending} resources pending</p></article>
         <article className="card statCard"><small>Participant suspended</small><strong>{summary.participantsSuspended}</strong><p>Archived from active access with history preserved.</p></article>
       </div>}
 
@@ -523,7 +527,7 @@ export default function AdminOperations(){
             <label>Qualified Enumerator
               <select name="enumeratorProfileId" required defaultValue="">
                 <option value="" disabled>Select Enumerator</option>
-                {enumerators.filter(x=>x.status==="QUALIFIED").map(x=><option key={x.id} value={x.id}>{x.fullName} Ãƒâ€šÃ‚· {x.enumeratorCode}</option>)}
+                {enumerators.filter(x=>x.status==="QUALIFIED").map(x=><option key={x.id} value={x.id}>{x.fullName} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÂ· {x.enumeratorCode}</option>)}
               </select>
             </label>
             <label>Full name<input name="fullName" required/></label>
