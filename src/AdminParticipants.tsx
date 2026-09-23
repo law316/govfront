@@ -7,13 +7,23 @@ type Programme="DIGITAL_SKILLS"|"BUSINESS_SUPPORT";
 
 const skillTracks=[
   "WEB_DEVELOPMENT",
+  "MOBILE_APP_DEVELOPMENT",
+  "SOFTWARE_ENGINEERING_FOUNDATIONS",
   "DATA_ANALYSIS",
+  "DATA_SCIENCE",
   "UI_UX_DESIGN",
   "DIGITAL_MARKETING",
   "GRAPHIC_DESIGN",
   "CYBERSECURITY_FUNDAMENTALS",
   "CLOUD_COMPUTING",
+  "CLOUD_ENGINEERING",
+  "DEVOPS_ENGINEERING",
   "AI_PRODUCTIVITY_TOOLS",
+  "PRODUCT_MANAGEMENT",
+  "PROJECT_MANAGEMENT",
+  "BUSINESS_ANALYSIS",
+  "CUSTOMER_SERVICE",
+  "ENTREPRENEURSHIP_FOUNDATIONS",
   "VIDEO_EDITING_CONTENT_PRODUCTION",
   "VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS"
 ];
@@ -527,7 +537,7 @@ export default function AdminParticipants(){
                 <div>
                   <span className="eyebrow">{plan.participantCode||"Participant"}</span>
                   <h2>{plan.businessName||"Business proposal"}</h2>
-                  <p><strong>{plan.participantName}</strong> Â· {plan.participantEmail}</p>
+                  <p><strong>{plan.participantName}</strong> Ãƒâ€šÃ‚· {plan.participantEmail}</p>
                 </div>
                 <Status value={plan.status}/>
               </div>

@@ -7,6 +7,9 @@ import AdminOperations from "./AdminOperations";
 import SupportCenter from "./SupportCenter";
 import AdminSupport from "./AdminSupport";
 import ProgrammeNoticeBoard from "./ProgrammeNoticeBoard";
+import EnumeratorExamCenter from "./EnumeratorExamCenter";
+import AdminExamBank from "./AdminExamBank";
+import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
 
@@ -81,9 +84,10 @@ function Layout({children}:{children:React.ReactNode}){
             <NavLink to="/">Home</NavLink>
             {!user&&<NavLink to="/register">Enumerator Registration</NavLink>}
             {!user&&<NavLink to="/login">Login</NavLink>}
-            {user?.role==="ENUMERATOR"&&<><NavLink to="/enumerator">Enumerator Dashboard</NavLink><NavLink to="/support">Support</NavLink></>}
+            {user?.role==="ENUMERATOR"&&<><NavLink to="/enumerator">Dashboard</NavLink><NavLink to="/enumerator/exam">Exam Centre</NavLink><NavLink to="/support">Support</NavLink></>}
             {user?.role==="ADMIN"&&<>
               <NavLink to="/admin">Administration</NavLink>
+              <NavLink to="/admin/exam-bank">Exam Bank</NavLink>
               <NavLink to="/admin/participants">Participants</NavLink>
               <NavLink to="/admin/operations">Operations</NavLink>
               <NavLink to="/admin/support">Support Inbox</NavLink>
@@ -311,6 +315,8 @@ function EnumeratorSignup(){
   const{accept}=useAuth();
   const navigate=useNavigate();
   const[error,setError]=useState("");
+  const[signupState,setSignupState]=useState("");
+  const[signupLga,setSignupLga]=useState("");
 
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
@@ -326,6 +332,16 @@ function EnumeratorSignup(){
 
     if(passport.size>2097152){
       setError("Passport photograph must be 2 MB or less.");
+      return;
+    }
+
+    const address=String(fd.get("address")||"").trim();
+    if(!signupState||!signupLga){
+      setError("Select your State and Local Government Area.");
+      return;
+    }
+    if(address.length<8){
+      setError("Enter a clear residential address with at least 8 characters.");
       return;
     }
 
@@ -357,9 +373,19 @@ function EnumeratorSignup(){
         <label>Full name<input name="fullName" autoComplete="name" required/></label>
         <label>Email<input name="email" type="email" autoComplete="email" required/></label>
         <label>Phone<input name="phone" autoComplete="tel" required/></label>
-        <label>State<input name="state" required/></label>
-        <label>LGA<input name="lga" required/></label>
-        <label>Residential address<input name="address" autoComplete="street-address" required/></label>
+        <label>State
+          <select name="state" required value={signupState} onChange={e=>{setSignupState(e.target.value);setSignupLga("");}}>
+            <option value="">Select State</option>
+            {NIGERIA_STATES.map(state=><option key={state} value={state}>{state}</option>)}
+          </select>
+        </label>
+        <label>Local Government Area
+          <select name="lga" required value={signupLga} disabled={!signupState} onChange={e=>setSignupLga(e.target.value)}>
+            <option value="">{signupState?"Select LGA":"Select State first"}</option>
+            {lgasForState(signupState).map(lga=><option key={lga} value={lga}>{lga}</option>)}
+          </select>
+        </label>
+        <label>Residential address<input name="address" autoComplete="street-address" minLength={8} placeholder="House number / street / community" required/></label>
         <label>Password<input name="password" type="password" minLength={10} autoComplete="new-password" required/></label>
         <label>Passport photograph<input name="passport" type="file" accept="image/jpeg,image/png,image/webp" required/></label>
       </div>
@@ -381,8 +407,7 @@ function StatusPill({value}:{value:string}){
 function EnumeratorDash(){
   const[data,setData]=useState<any>();
   const[materials,setMaterials]=useState<any[]>([]);
-  const[questions,setQuestions]=useState<any[]>([]);
-  const[answers,setAnswers]=useState<Record<number,string>>({});
+  const[examOverview,setExamOverview]=useState<any>();
   const[message,setMessage]=useState("");
   const[error,setError]=useState("");
   const[busy,setBusy]=useState("");
@@ -397,10 +422,10 @@ function EnumeratorDash(){
       if(["PAID","QUALIFIED"].includes(profile.status)){
         const[library,exam]=await Promise.all([
           api<any[]>("/api/training/materials"),
-          api<any[]>("/api/exam/questions")
+          api<any>("/api/exam/overview")
         ]);
         setMaterials(library);
-        setQuestions(exam);
+        setExamOverview(exam);
       }
     }catch(err){
       setError(err instanceof Error?err.message:"Could not load Enumerator dashboard");
@@ -425,32 +450,6 @@ function EnumeratorDash(){
       setBusy("");
     }
   };
-
-  async function submitExam(e:FormEvent){
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setBusy("exam");
-
-    try{
-      const response=await api<any>("/api/exam/submit",{
-        method:"POST",
-        body:JSON.stringify({
-          answers:Object.entries(answers).map(([questionId,selectedOption])=>({
-            questionId:Number(questionId),
-            selectedOption
-          }))
-        })
-      });
-
-      setMessage(`${response.message} Score ${response.score}%`);
-      await load();
-    }catch(err){
-      setError(err instanceof Error?err.message:"Assessment submission failed");
-    }finally{
-      setBusy("");
-    }
-  }
 
   const progressLabel=useMemo(()=>{
     if(!data)return "Loading";
@@ -547,37 +546,25 @@ function EnumeratorDash(){
             }
           </article>
 
-          {data.status!=="QUALIFIED"&&
-            <form className="card examPanel" onSubmit={submitExam}>
-              <span className="eyebrow">Qualification test</span>
-              <h2>Enumerator assessment</h2>
-
-              {!questions.length&&<p className="muted">The administrator has not published assessment questions yet.</p>}
-
-              {questions.map((question,index)=>
-                <fieldset key={question.id}>
-                  <legend>{index+1}. {question.questionText}</legend>
-
-                  {question.options.map((option:string,optionIndex:number)=>{
-                    const value=String.fromCharCode(65+optionIndex);
-
-                    return <label key={value}>
-                      <input
-                        type="radio"
-                        name={`q${question.id}`}
-                        required
-                        checked={answers[question.id]===value}
-                        onChange={()=>setAnswers(previous=>({...previous,[question.id]:value}))}
-                      />
-                      {" "}{value}. {option}
-                    </label>;
-                  })}
-                </fieldset>
-              )}
-
-              {!!questions.length&&<button className="btn primary full" type="submit" disabled={busy==="exam"}>{busy==="exam"?"Submitting...":"Submit assessment"}</button>}
-            </form>
-          }
+          <article className="card examReadyCard">
+            <div className="examReadyIcon">✓</div>
+            <span className="eyebrow">Qualification assessment</span>
+            <h2>{data.status==="QUALIFIED"?"Assessment completed":"Take the test when you are ready"}</h2>
+            <p>{data.status==="QUALIFIED"
+              ?`Your latest recorded score is ${data.examScore??"-"}%. Your field qualification is active.`
+              :"Your training materials remain available here. The assessment opens separately in a focused, timed Exam Centre when you choose to begin."}</p>
+            <div className="examReadyMeta">
+              <span><small>Questions</small><strong>{examOverview?.questionCount??0}</strong></span>
+              <span><small>Duration</small><strong>{examOverview?.durationMinutes??30} min</strong></span>
+              <span><small>Pass mark</small><strong>{examOverview?.passMark??70}%</strong></span>
+            </div>
+            {data.status!=="QUALIFIED"&&
+              ((examOverview?.questionCount??0)>0
+                ?<Link className="btn primary full" to="/enumerator/exam">{examOverview?.activeSessionId?"Resume timed assessment":"Open Exam Centre"}</Link>
+                :<div className="examUnavailableSmall">Assessment questions have not been published yet.</div>)
+            }
+            {data.status==="QUALIFIED"&&<Link className="btn outline full" to="/enumerator/exam">View Exam Centre</Link>}
+          </article>
         </div>
       </>}
 
@@ -802,6 +789,10 @@ function Admin(){
         <div><span className="eyebrow">Programme operations</span><h3>Timeline, announcements, payments & accounts</h3><p>Set deadlines, publish notices, handle payment exceptions and manage active accounts.</p></div>
         <Link className="btn secondary small" to="/admin/operations">Open operations</Link>
       </article>
+      <article className="card adminLaunchCard">
+        <div><span className="eyebrow">Qualification assessment</span><h3>Professional Question Bank</h3><p>Create, edit, review, deactivate and reactivate Enumerator assessment questions without accidental duplicates.</p></div>
+        <Link className="btn secondary small" to="/admin/exam-bank">Open question bank</Link>
+      </article>
     </div>
 
     <div className="adminTabs" role="tablist" aria-label="Admin sections">
@@ -956,7 +947,7 @@ function Admin(){
         <form className="card formCard" onSubmit={uploadMaterial}>
           <span className="eyebrow">Training library</span>
           <h2>Publish study material</h2>
-          <p>Only paid Enumerators can access these materials.</p>
+          <p>Paid Enumerators can download approved resources before taking the timed qualification assessment.</p>
 
           <label>Title<input name="title" required maxLength={180}/></label>
           <label>Description<input name="description" required maxLength={600}/></label>
@@ -965,26 +956,19 @@ function Admin(){
           <button className="btn primary full" type="submit" disabled={busy==="material"}>{busy==="material"?"Uploading...":"Upload material"}</button>
         </form>
 
-        <form className="card formCard" onSubmit={addQuestion}>
-          <span className="eyebrow">Qualification exam</span>
-          <h2>Add exam question</h2>
-          <p>Questions published here are visible only to Enumerators with verified training access.</p>
-
-          <label>Question<input name="questionText" required maxLength={900}/></label>
-          {["A","B","C","D"].map(option=>
-            <label key={option}>Option {option}<input name={`option${option}`} required maxLength={400}/></label>
-          )}
-          <label>Correct answer
-            <select name="correctOption" defaultValue="A">
-              <option>A</option>
-              <option>B</option>
-              <option>C</option>
-              <option>D</option>
-            </select>
-          </label>
-
-          <button className="btn primary full" type="submit" disabled={busy==="question"}>{busy==="question"?"Adding...":"Add question"}</button>
-        </form>
+        <article className="card examAdminLaunch">
+          <div className="examAdminLaunchIcon">✓</div>
+          <span className="eyebrow">Qualification assessment</span>
+          <h2>Manage the professional question bank</h2>
+          <p>Review existing questions before adding new ones, edit mistakes, archive outdated questions and prevent duplicate entries.</p>
+          <ul>
+            <li>Dedicated question-bank workspace</li>
+            <li>Duplicate-question protection</li>
+            <li>Edit and deactivate controls</li>
+            <li>Timed Exam Centre for Enumerators</li>
+          </ul>
+          <Link className="btn primary full" to="/admin/exam-bank">Open Question Bank</Link>
+        </article>
       </div>
     }
 
@@ -1089,6 +1073,8 @@ export default function App(){
           <Route path="/register" element={<EnumeratorSignup/>}/>
           <Route path="/enumerators/register" element={<Navigate to="/register" replace/>}/>
           <Route path="/enumerator" element={<Guard role="ENUMERATOR"><EnumeratorDash/></Guard>}/>
+          <Route path="/enumerator/exam" element={<Guard role="ENUMERATOR"><EnumeratorExamCenter/></Guard>}/>
+          <Route path="/admin/exam-bank" element={<Guard role="ADMIN"><AdminExamBank/></Guard>}/>
           <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>
           <Route path="/admin/operations" element={<Guard role="ADMIN"><AdminOperations/></Guard>}/>
           <Route path="/admin/support" element={<Guard role="ADMIN"><AdminSupport/></Guard>}/>

@@ -1,6 +1,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
+import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
 
 type AdminTab="programme"|"payments"|"accounts";
 type Audience="ALL"|"ENUMERATORS"|"PARTICIPANTS";
@@ -33,9 +34,12 @@ type Summary={
 };
 
 const skillTracks=[
-  "WEB_DEVELOPMENT","DATA_ANALYSIS","UI_UX_DESIGN","DIGITAL_MARKETING","GRAPHIC_DESIGN",
-  "CYBERSECURITY_FUNDAMENTALS","CLOUD_COMPUTING","AI_PRODUCTIVITY_TOOLS",
-  "VIDEO_EDITING_CONTENT_PRODUCTION","VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS"
+  "WEB_DEVELOPMENT","MOBILE_APP_DEVELOPMENT","SOFTWARE_ENGINEERING_FOUNDATIONS",
+  "DATA_ANALYSIS","DATA_SCIENCE","UI_UX_DESIGN","DIGITAL_MARKETING","GRAPHIC_DESIGN",
+  "CYBERSECURITY_FUNDAMENTALS","CLOUD_COMPUTING","CLOUD_ENGINEERING","DEVOPS_ENGINEERING",
+  "AI_PRODUCTIVITY_TOOLS","PRODUCT_MANAGEMENT","PROJECT_MANAGEMENT","BUSINESS_ANALYSIS",
+  "CUSTOMER_SERVICE","ENTREPRENEURSHIP_FOUNDATIONS","VIDEO_EDITING_CONTENT_PRODUCTION",
+  "VIRTUAL_ASSISTANCE_DIGITAL_BUSINESS"
 ];
 
 function label(value?:string|null){
@@ -69,6 +73,8 @@ export default function AdminOperations(){
   const[enumFilter,setEnumFilter]=useState("ALL");
   const[participantFilter,setParticipantFilter]=useState("ALL");
   const[accountSearch,setAccountSearch]=useState("");
+  const[createEnumeratorState,setCreateEnumeratorState]=useState("");
+  const[createParticipantState,setCreateParticipantState]=useState("");
   const[manualPurpose,setManualPurpose]=useState<PaymentPurpose>("ENUMERATOR_REGISTRATION");
   const[manualTarget,setManualTarget]=useState("");
   const[manualReason,setManualReason]=useState("");
@@ -124,8 +130,8 @@ export default function AdminOperations(){
   },[participants,participantFilter,accountSearch]);
 
   const manualTargets=manualPurpose==="ENUMERATOR_REGISTRATION"
-    ?enumerators.map(x=>({id:x.id,label:`${x.fullName} Â· ${x.enumeratorCode||"No ID"} Â· ${label(x.status)}`}))
-    :participants.map(x=>({id:x.id,label:`${x.fullName} Â· ${x.participantCode} Â· ${label(x.participantStatus)}`}));
+    ?enumerators.map(x=>({id:x.id,label:`${x.fullName} Ãƒâ€šÃ‚· ${x.enumeratorCode||"No ID"} Ãƒâ€šÃ‚· ${label(x.status)}`}))
+    :participants.map(x=>({id:x.id,label:`${x.fullName} Ãƒâ€šÃ‚· ${x.participantCode} Ãƒâ€šÃ‚· ${label(x.participantStatus)}`}));
 
   async function saveDeadline(e:FormEvent){
     e.preventDefault();
@@ -240,6 +246,7 @@ export default function AdminOperations(){
       await api("/api/admin/operations/enumerators",{method:"POST",body});
       setMessage("Enumerator account created. Registration payment is still pending until verified or manually confirmed.");
       e.currentTarget.reset();
+      setCreateEnumeratorState("");
       await load();
     }catch(err){setError(err instanceof Error?err.message:"Could not create Enumerator.");}
     finally{setBusy("");}
@@ -268,6 +275,7 @@ export default function AdminOperations(){
       });
       setMessage("Participant account created. It remains inactive until registration payment is verified or manually confirmed.");
       e.currentTarget.reset();
+      setCreateParticipantState("");
       await load();
     }catch(err){setError(err instanceof Error?err.message:"Could not create participant.");}
     finally{setBusy("");}
@@ -303,6 +311,31 @@ export default function AdminOperations(){
       await load();
     }catch(err){
       setError(err instanceof Error?err.message:"Permanent deletion was blocked.");
+    }finally{setBusy("");}
+  }
+
+  async function qaConfirmParticipant(row:ParticipantRow,purpose:"PARTICIPANT_REGISTRATION"|"RESOURCE_PROVISIONING"){
+    const defaultReason="Internal QA test account - Admin override used for workflow testing; no external payment collected.";
+    const reason=window.prompt(
+      purpose==="PARTICIPANT_REGISTRATION"
+        ?`Activate ${row.fullName}'s participant registration for controlled testing. Enter the audit reason:`
+        :`Unlock ${row.fullName}'s training resources for controlled testing. Enter the audit reason:`,
+      defaultReason
+    );
+    if(!reason||reason.trim().length<5)return;
+    if(!window.confirm("Record this as an audited Admin QA override? It will NOT be labelled as provider-verified payment."))return;
+
+    const key=`qa:${purpose}:${row.id}`;
+    setBusy(key);setError("");setMessage("");
+    try{
+      const result=await api<PaymentRow>("/api/admin/payment-controls/manual-confirm",{
+        method:"POST",
+        body:JSON.stringify({purpose,targetId:row.id,reason:reason.trim()})
+      });
+      setMessage(`QA override recorded for ${row.fullName}: ${result.txRef}`);
+      await load();
+    }catch(err){
+      setError(err instanceof Error?err.message:"Could not record the QA payment override.");
     }finally{setBusy("");}
   }
 
@@ -420,7 +453,7 @@ export default function AdminOperations(){
       <form className="card formCard manualConfirmForm" onSubmit={manualConfirm}>
         <span className="eyebrow">Manual payment confirmation</span>
         <h2>Confirm a registration or resource payment manually</h2>
-        <p>Use this only after checking your bank/payment evidence. The system records the confirmation as an Admin override, not as provider verification.</p>
+        <p>For real payment exceptions, verify the payment evidence first. For your own controlled QA accounts, use a clear QA reason stating that no external payment was collected. Every action is recorded as an Admin override, never as provider verification.</p>
         <div className="fields">
           <label>Purpose
             <select value={manualPurpose} onChange={e=>{setManualPurpose(e.target.value as PaymentPurpose);setManualTarget("");}}>
@@ -462,9 +495,9 @@ export default function AdminOperations(){
 
     {tab==="accounts"&&<>
       {summary&&<div className="featureGrid four">
-        <article className="card statCard"><small>Enumerators</small><strong>{summary.enumeratorsTotal}</strong><p>{summary.enumeratorsQualified} qualified Â· {summary.enumeratorsPendingPayment} payment pending</p></article>
+        <article className="card statCard"><small>Enumerators</small><strong>{summary.enumeratorsTotal}</strong><p>{summary.enumeratorsQualified} qualified Ãƒâ€šÃ‚· {summary.enumeratorsPendingPayment} payment pending</p></article>
         <article className="card statCard"><small>Enumerator suspended</small><strong>{summary.enumeratorsSuspended}</strong><p>Removed from active login until reactivated.</p></article>
-        <article className="card statCard"><small>Participants</small><strong>{summary.participantsTotal}</strong><p>{summary.participantsRegistrationPending} registration pending Â· {summary.participantsResourcesPending} resources pending</p></article>
+        <article className="card statCard"><small>Participants</small><strong>{summary.participantsTotal}</strong><p>{summary.participantsRegistrationPending} registration pending Ãƒâ€šÃ‚· {summary.participantsResourcesPending} resources pending</p></article>
         <article className="card statCard"><small>Participant suspended</small><strong>{summary.participantsSuspended}</strong><p>Archived from active access with history preserved.</p></article>
       </div>}
 
@@ -475,9 +508,9 @@ export default function AdminOperations(){
             <label>Full name<input name="fullName" required/></label>
             <label>Email<input name="email" type="email" required/></label>
             <label>Phone<input name="phone" required/></label>
-            <label>State<input name="state" required/></label>
-            <label>LGA<input name="lga" required/></label>
-            <label>Address<input name="address" required/></label>
+            <label>State<select name="state" required value={createEnumeratorState} onChange={e=>setCreateEnumeratorState(e.target.value)}><option value="">Select State</option>{NIGERIA_STATES.map(state=><option key={state} value={state}>{state}</option>)}</select></label>
+            <label>LGA<select name="lga" required disabled={!createEnumeratorState} defaultValue=""><option value="">Select LGA</option>{lgasForState(createEnumeratorState).map(lga=><option key={lga} value={lga}>{lga}</option>)}</select></label>
+            <label>Address<input name="address" minLength={8} placeholder="House number / street / community" required/></label>
             <label>Password<input name="password" type="password" minLength={10} required/></label>
             <label>Passport<input name="passport" type="file" accept="image/jpeg,image/png,image/webp" required/></label>
           </div>
@@ -490,15 +523,15 @@ export default function AdminOperations(){
             <label>Qualified Enumerator
               <select name="enumeratorProfileId" required defaultValue="">
                 <option value="" disabled>Select Enumerator</option>
-                {enumerators.filter(x=>x.status==="QUALIFIED").map(x=><option key={x.id} value={x.id}>{x.fullName} Â· {x.enumeratorCode}</option>)}
+                {enumerators.filter(x=>x.status==="QUALIFIED").map(x=><option key={x.id} value={x.id}>{x.fullName} Ãƒâ€šÃ‚· {x.enumeratorCode}</option>)}
               </select>
             </label>
             <label>Full name<input name="fullName" required/></label>
             <label>Email<input name="email" type="email" required/></label>
             <label>Phone<input name="phone" required/></label>
-            <label>State<input name="state" required/></label>
-            <label>LGA<input name="lga" required/></label>
-            <label>Address<input name="address" required/></label>
+            <label>State<select name="state" required value={createParticipantState} onChange={e=>setCreateParticipantState(e.target.value)}><option value="">Select State</option>{NIGERIA_STATES.map(state=><option key={state} value={state}>{state}</option>)}</select></label>
+            <label>LGA<select name="lga" required disabled={!createParticipantState} defaultValue=""><option value="">Select LGA</option>{lgasForState(createParticipantState).map(lga=><option key={lga} value={lga}>{lga}</option>)}</select></label>
+            <label>Address<input name="address" minLength={8} placeholder="House number / street / community" required/></label>
             <label>Pathway
               <select name="program" defaultValue="DIGITAL_SKILLS">
                 <option value="DIGITAL_SKILLS">Digital Skills & Enterprise</option>
@@ -536,9 +569,9 @@ export default function AdminOperations(){
           <label>Full name<input value={editing.fullName} onChange={e=>setEditing({...editing,fullName:e.target.value})}/></label>
           <label>Email<input type="email" value={editing.email} onChange={e=>setEditing({...editing,email:e.target.value})}/></label>
           <label>Phone<input value={editing.phone} onChange={e=>setEditing({...editing,phone:e.target.value})}/></label>
-          <label>State<input value={editing.state} onChange={e=>setEditing({...editing,state:e.target.value})}/></label>
-          <label>LGA<input value={editing.lga} onChange={e=>setEditing({...editing,lga:e.target.value})}/></label>
-          <label>Address<input value={editing.address} onChange={e=>setEditing({...editing,address:e.target.value})}/></label>
+          <label>State<select value={editing.state} onChange={e=>setEditing({...editing,state:e.target.value,lga:""})}><option value="">Select State</option>{NIGERIA_STATES.map(state=><option key={state} value={state}>{state}</option>)}</select></label>
+          <label>LGA<select value={editing.lga} disabled={!editing.state} onChange={e=>setEditing({...editing,lga:e.target.value})}><option value="">Select LGA</option>{lgasForState(editing.state).map(lga=><option key={lga} value={lga}>{lga}</option>)}</select></label>
+          <label>Address<input minLength={8} value={editing.address} onChange={e=>setEditing({...editing,address:e.target.value})}/></label>
         </div>
         <button className="btn primary" disabled={busy==="edit-account"}>{busy==="edit-account"?"Saving...":"Save account changes"}</button>
       </form>}
@@ -561,7 +594,10 @@ export default function AdminOperations(){
         <tbody>{filteredParticipants.map(row=><tr key={row.id}>
           <td><strong>{row.fullName}</strong><small className="tableSub">{row.email}</small><small className="tableSub mono">{row.participantCode}</small></td>
           <td>{label(row.program)}{row.skillTrack&&<small className="tableSub">{label(row.skillTrack)}</small>}</td><td className="mono">{row.referredBy||"-"}</td><td><Status value={row.participantStatus}/></td><td>{row.resourcesUnlocked?"Unlocked":"Pending"}</td><td>{row.enabled?"Yes":"No"}</td>
-          <td className="actionButtons"><button className="btn outline small" type="button" onClick={()=>setEditing({kind:"participant",id:row.id,fullName:row.fullName,email:row.email,phone:row.phone,state:row.state,lga:row.lga,address:row.address})}>Edit</button>
+          <td className="actionButtons">
+          {!row.registrationPaidAt&&<button className="btn qa small" type="button" disabled={busy===`qa:PARTICIPANT_REGISTRATION:${row.id}`} onClick={()=>void qaConfirmParticipant(row,"PARTICIPANT_REGISTRATION")}>{busy===`qa:PARTICIPANT_REGISTRATION:${row.id}`?"Activating...":"Test: Activate"}</button>}
+          {!!row.registrationPaidAt&&!row.resourcePaidAt&&row.enabled&&<button className="btn qa small" type="button" disabled={busy===`qa:RESOURCE_PROVISIONING:${row.id}`} onClick={()=>void qaConfirmParticipant(row,"RESOURCE_PROVISIONING")}>{busy===`qa:RESOURCE_PROVISIONING:${row.id}`?"Unlocking...":"Test: Unlock resources"}</button>}
+          <button className="btn outline small" type="button" onClick={()=>setEditing({kind:"participant",id:row.id,fullName:row.fullName,email:row.email,phone:row.phone,state:row.state,lga:row.lga,address:row.address})}>Edit</button>
           <button className="btn outline small" type="button" disabled={busy.endsWith(`:participant:${row.id}`)} onClick={()=>void accountAction("participant",row.id,row.enabled)}>{row.enabled?"Archive":"Reactivate"}</button>
           <button className="btn danger small" type="button" disabled={busy===`delete:participant:${row.id}`} onClick={()=>void deleteAccount("participant",row.id,row.fullName)}>{busy===`delete:participant:${row.id}`?"Deleting...":"Delete"}</button></td>
         </tr>)}</tbody></table></div>
