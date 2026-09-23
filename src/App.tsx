@@ -10,6 +10,7 @@ import ProgrammeNoticeBoard from "./ProgrammeNoticeBoard";
 import EnumeratorExamCenter from "./EnumeratorExamCenter";
 import AdminExamBank from "./AdminExamBank";
 import AdminContentControl from "./AdminContentControl";
+import AdminTrainingProviders from "./AdminTrainingProviders";
 import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
@@ -90,6 +91,7 @@ function Layout({children}:{children:React.ReactNode}){
               <NavLink to="/admin">Administration</NavLink>
               <NavLink to="/admin/exam-bank">Exam Bank</NavLink>
               <NavLink to="/admin/content-control">Content Control</NavLink>
+              <NavLink to="/admin/training-providers">Training Providers</NavLink>
               <NavLink to="/admin/participants">Participants</NavLink>
               <NavLink to="/admin/operations">Operations</NavLink>
               <NavLink to="/admin/support">Support Inbox</NavLink>
@@ -549,7 +551,7 @@ function EnumeratorDash(){
           </article>
 
           <article className="card examReadyCard">
-            <div className="examReadyIcon">âœ“</div>
+            <div className="examReadyIcon">Ã¢Å“â€œ</div>
             <span className="eyebrow">Qualification assessment</span>
             <h2>{data.status==="QUALIFIED"?"Assessment completed":"Take the test when you are ready"}</h2>
             <p>{data.status==="QUALIFIED"
@@ -799,6 +801,10 @@ function Admin(){
         <div><span className="eyebrow">Master content control</span><h3>Edit, archive or permanently delete content</h3><p>Manage Enumerator resources, Participant resources/questions, announcements, access codes and timeline reset controls.</p></div>
         <Link className="btn secondary small" to="/admin/content-control">Open content control</Link>
       </article>
+      <article className="card adminLaunchCard">
+        <div><span className="eyebrow">Advanced training network</span><h3>Approved training providers & offers</h3><p>Add real provider organisations, configure low-cost advanced training, media, registration links and publication status.</p></div>
+        <Link className="btn secondary small" to="/admin/training-providers">Manage providers</Link>
+      </article>
     </div>
 
     <div className="adminTabs" role="tablist" aria-label="Admin sections">
@@ -963,7 +969,7 @@ function Admin(){
         </form>
 
         <article className="card examAdminLaunch">
-          <div className="examAdminLaunchIcon">âœ“</div>
+          <div className="examAdminLaunchIcon">Ã¢Å“â€œ</div>
           <span className="eyebrow">Qualification assessment</span>
           <h2>Manage the professional question bank</h2>
           <p>Review existing questions before adding new ones, edit mistakes, archive outdated questions and prevent duplicate entries.</p>
@@ -1082,6 +1088,7 @@ export default function App(){
           <Route path="/enumerator/exam" element={<Guard role="ENUMERATOR"><EnumeratorExamCenter/></Guard>}/>
           <Route path="/admin/exam-bank" element={<Guard role="ADMIN"><AdminExamBank/></Guard>}/>
           <Route path="/admin/content-control" element={<Guard role="ADMIN"><AdminContentControl/></Guard>}/>
+          <Route path="/admin/training-providers" element={<Guard role="ADMIN"><AdminTrainingProviders/></Guard>}/>
           <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>
           <Route path="/admin/operations" element={<Guard role="ADMIN"><AdminOperations/></Guard>}/>
           <Route path="/admin/support" element={<Guard role="ADMIN"><AdminSupport/></Guard>}/>
