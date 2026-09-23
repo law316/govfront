@@ -124,8 +124,8 @@ export default function AdminOperations(){
   },[participants,participantFilter,accountSearch]);
 
   const manualTargets=manualPurpose==="ENUMERATOR_REGISTRATION"
-    ?enumerators.map(x=>({id:x.id,label:`${x.fullName} · ${x.enumeratorCode||"No ID"} · ${label(x.status)}`}))
-    :participants.map(x=>({id:x.id,label:`${x.fullName} · ${x.participantCode} · ${label(x.participantStatus)}`}));
+    ?enumerators.map(x=>({id:x.id,label:`${x.fullName} Â· ${x.enumeratorCode||"No ID"} Â· ${label(x.status)}`}))
+    :participants.map(x=>({id:x.id,label:`${x.fullName} Â· ${x.participantCode} Â· ${label(x.participantStatus)}`}));
 
   async function saveDeadline(e:FormEvent){
     e.preventDefault();
@@ -292,6 +292,20 @@ export default function AdminOperations(){
     finally{setBusy("");}
   }
 
+  async function deleteAccount(kind:"enumerator"|"participant",id:number,name:string){
+    const confirmation=window.prompt(`Permanent delete is only allowed for safe test/unpaid records. Type DELETE to permanently delete ${name}.`);
+    if(confirmation!=="DELETE")return;
+    setBusy(`delete:${kind}:${id}`);setError("");setMessage("");
+    try{
+      await api(`/api/admin/operations/${kind==="enumerator"?"enumerators":"participants"}/${id}?confirm=DELETE`,{method:"DELETE"});
+      setEditing(null);
+      setMessage("Account permanently deleted. Protected financial/audit records cannot be deleted by this action.");
+      await load();
+    }catch(err){
+      setError(err instanceof Error?err.message:"Permanent deletion was blocked.");
+    }finally{setBusy("");}
+  }
+
   async function accountAction(kind:"enumerator"|"participant",id:number,enabled:boolean){
     const action=enabled?"archive":"reactivate";
     const wording=enabled?"remove this account from active programme access":"reactivate this account";
@@ -317,6 +331,7 @@ export default function AdminOperations(){
 
     {error&&<div className="error">{error}</div>}
     {message&&<div className="success">{message}</div>}
+    {busy&&<div className="busyNotice"><span className="spinner"/>Processing administration request...</div>}
 
     <div className="adminTabs">
       <button className={tab==="programme"?"active":""} onClick={()=>setTab("programme")}>Timeline & Announcements</button>
@@ -447,9 +462,9 @@ export default function AdminOperations(){
 
     {tab==="accounts"&&<>
       {summary&&<div className="featureGrid four">
-        <article className="card statCard"><small>Enumerators</small><strong>{summary.enumeratorsTotal}</strong><p>{summary.enumeratorsQualified} qualified · {summary.enumeratorsPendingPayment} payment pending</p></article>
+        <article className="card statCard"><small>Enumerators</small><strong>{summary.enumeratorsTotal}</strong><p>{summary.enumeratorsQualified} qualified Â· {summary.enumeratorsPendingPayment} payment pending</p></article>
         <article className="card statCard"><small>Enumerator suspended</small><strong>{summary.enumeratorsSuspended}</strong><p>Removed from active login until reactivated.</p></article>
-        <article className="card statCard"><small>Participants</small><strong>{summary.participantsTotal}</strong><p>{summary.participantsRegistrationPending} registration pending · {summary.participantsResourcesPending} resources pending</p></article>
+        <article className="card statCard"><small>Participants</small><strong>{summary.participantsTotal}</strong><p>{summary.participantsRegistrationPending} registration pending Â· {summary.participantsResourcesPending} resources pending</p></article>
         <article className="card statCard"><small>Participant suspended</small><strong>{summary.participantsSuspended}</strong><p>Archived from active access with history preserved.</p></article>
       </div>}
 
@@ -475,7 +490,7 @@ export default function AdminOperations(){
             <label>Qualified Enumerator
               <select name="enumeratorProfileId" required defaultValue="">
                 <option value="" disabled>Select Enumerator</option>
-                {enumerators.filter(x=>x.status==="QUALIFIED").map(x=><option key={x.id} value={x.id}>{x.fullName} · {x.enumeratorCode}</option>)}
+                {enumerators.filter(x=>x.status==="QUALIFIED").map(x=><option key={x.id} value={x.id}>{x.fullName} Â· {x.enumeratorCode}</option>)}
               </select>
             </label>
             <label>Full name<input name="fullName" required/></label>
@@ -535,7 +550,8 @@ export default function AdminOperations(){
           <td><strong>{row.fullName}</strong><small className="tableSub">{row.email}</small><small className="tableSub mono">{row.enumeratorCode||"-"}</small></td>
           <td>{row.lga}, {row.state}</td><td><Status value={row.status}/></td><td>{row.examScore==null?"-":`${row.examScore}%`}</td><td>{row.enabled?"Yes":"No"}</td>
           <td className="actionButtons"><button className="btn outline small" type="button" onClick={()=>setEditing({kind:"enumerator",id:row.id,fullName:row.fullName,email:row.email,phone:row.phone,state:row.state,lga:row.lga,address:row.address})}>Edit</button>
-          <button className="btn outline small" type="button" disabled={busy.endsWith(`:enumerator:${row.id}`)} onClick={()=>void accountAction("enumerator",row.id,row.enabled)}>{row.enabled?"Archive":"Reactivate"}</button></td>
+          <button className="btn outline small" type="button" disabled={busy.endsWith(`:enumerator:${row.id}`)} onClick={()=>void accountAction("enumerator",row.id,row.enabled)}>{row.enabled?"Archive":"Reactivate"}</button>
+          <button className="btn danger small" type="button" disabled={busy===`delete:enumerator:${row.id}`} onClick={()=>void deleteAccount("enumerator",row.id,row.fullName)}>{busy===`delete:enumerator:${row.id}`?"Deleting...":"Delete"}</button></td>
         </tr>)}</tbody></table></div>
       </article>
 
@@ -546,7 +562,8 @@ export default function AdminOperations(){
           <td><strong>{row.fullName}</strong><small className="tableSub">{row.email}</small><small className="tableSub mono">{row.participantCode}</small></td>
           <td>{label(row.program)}{row.skillTrack&&<small className="tableSub">{label(row.skillTrack)}</small>}</td><td className="mono">{row.referredBy||"-"}</td><td><Status value={row.participantStatus}/></td><td>{row.resourcesUnlocked?"Unlocked":"Pending"}</td><td>{row.enabled?"Yes":"No"}</td>
           <td className="actionButtons"><button className="btn outline small" type="button" onClick={()=>setEditing({kind:"participant",id:row.id,fullName:row.fullName,email:row.email,phone:row.phone,state:row.state,lga:row.lga,address:row.address})}>Edit</button>
-          <button className="btn outline small" type="button" disabled={busy.endsWith(`:participant:${row.id}`)} onClick={()=>void accountAction("participant",row.id,row.enabled)}>{row.enabled?"Archive":"Reactivate"}</button></td>
+          <button className="btn outline small" type="button" disabled={busy.endsWith(`:participant:${row.id}`)} onClick={()=>void accountAction("participant",row.id,row.enabled)}>{row.enabled?"Archive":"Reactivate"}</button>
+          <button className="btn danger small" type="button" disabled={busy===`delete:participant:${row.id}`} onClick={()=>void deleteAccount("participant",row.id,row.fullName)}>{busy===`delete:participant:${row.id}`?"Deleting...":"Delete"}</button></td>
         </tr>)}</tbody></table></div>
       </article>
     </>}

@@ -4,6 +4,8 @@ import {AuthProvider,useAuth,Role} from "./Auth";
 import {api,download} from "./api";
 import AdminParticipants from "./AdminParticipants";
 import AdminOperations from "./AdminOperations";
+import SupportCenter from "./SupportCenter";
+import AdminSupport from "./AdminSupport";
 import ProgrammeNoticeBoard from "./ProgrammeNoticeBoard";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
@@ -79,11 +81,12 @@ function Layout({children}:{children:React.ReactNode}){
             <NavLink to="/">Home</NavLink>
             {!user&&<NavLink to="/register">Enumerator Registration</NavLink>}
             {!user&&<NavLink to="/login">Login</NavLink>}
-            {user?.role==="ENUMERATOR"&&<NavLink to="/enumerator">Enumerator Dashboard</NavLink>}
+            {user?.role==="ENUMERATOR"&&<><NavLink to="/enumerator">Enumerator Dashboard</NavLink><NavLink to="/support">Support</NavLink></>}
             {user?.role==="ADMIN"&&<>
               <NavLink to="/admin">Administration</NavLink>
               <NavLink to="/admin/participants">Participants</NavLink>
               <NavLink to="/admin/operations">Operations</NavLink>
+              <NavLink to="/admin/support">Support Inbox</NavLink>
             </>}
           </nav>
 
@@ -257,18 +260,22 @@ function Login(){
   const[email,setEmail]=useState("");
   const[password,setPassword]=useState("");
   const[error,setError]=useState("");
+  const[busy,setBusy]=useState(false);
   const{login}=useAuth();
   const navigate=useNavigate();
 
   async function submit(e:FormEvent){
     e.preventDefault();
     setError("");
+    setBusy(true);
 
     try{
       const user=await login(email,password);
       navigate(user.role==="ADMIN"?"/admin":user.role==="ENUMERATOR"?"/enumerator":"/");
     }catch(err){
       setError(err instanceof Error?err.message:"Sign in failed");
+    }finally{
+      setBusy(false);
     }
   }
 
@@ -295,7 +302,7 @@ function Login(){
         <input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" required/>
       </label>
 
-      <button className="btn primary full" type="submit">Sign in</button>
+      <button className="btn primary full" type="submit" disabled={busy}>{busy?"Signing in...":"Sign in"}</button>
     </form>
   </AuthShell>;
 }
@@ -469,6 +476,7 @@ function EnumeratorDash(){
     {message&&<div className="success">{message}</div>}
 
     <ProgrammeNoticeBoard/>
+    {busy==="payment"&&<div className="busyNotice"><span className="spinner"/>Preparing your secure payment page...</div>}
 
     {data&&<>
       <div className="featureGrid three">
@@ -503,9 +511,12 @@ function EnumeratorDash(){
             <h2>Complete your Enumerator payment</h2>
             <p>Once payment is verified, your training materials and qualification test become available inside this dashboard.</p>
           </div>
-          <button className="btn primary" type="button" disabled={busy==="payment"} onClick={()=>void pay()}>
-            {busy==="payment"?"Redirecting...":"Proceed to secure payment"}
-          </button>
+          <div className="paymentActionGroup">
+            <button className="btn primary" type="button" disabled={busy==="payment"} onClick={()=>void pay()}>
+              {busy==="payment"?"Opening secure payment...":"Proceed to secure payment"}
+            </button>
+            <Link className="btn outline" to="/support?category=PAYMENT_NOT_REFLECTED">Contact Support</Link>
+          </div>
         </article>
       }
 
@@ -1016,33 +1027,54 @@ function Admin(){
 
 function Callback(){
   const[params]=useSearchParams();
-  const[message,setMessage]=useState("Verifying payment...");
+  const[message,setMessage]=useState("Checking payment status...");
+  const[busy,setBusy]=useState(false);
+  const[verified,setVerified]=useState(false);
   const{user}=useAuth();
 
-  useEffect(()=>{
-    const id=params.get("transaction_id");
-    const ref=params.get("tx_ref");
-    const status=params.get("status");
+  const id=params.get("transaction_id");
+  const ref=params.get("tx_ref");
+  const status=params.get("status");
+  const canRetry=status==="successful"&&!!id&&!!ref;
 
-    if(status!=="successful"||!id||!ref){
-      setMessage("Payment was not completed.");
+  async function verify(){
+    if(!canRetry){
+      setVerified(false);
+      setMessage("Payment was not completed or the provider did not return enough information for automatic verification.");
       return;
     }
+    setBusy(true);
+    setMessage("Checking payment with the provider...");
+    try{
+      const response=await api<any>("/api/payments/verify",{
+        method:"POST",
+        body:JSON.stringify({transactionId:Number(id),txRef:ref})
+      });
+      setVerified(Boolean(response.verified));
+      setMessage(response.message||"Payment check completed.");
+    }catch(err){
+      setVerified(false);
+      setMessage(err instanceof Error?err.message:"Payment verification failed");
+    }finally{
+      setBusy(false);
+    }
+  }
 
-    api<any>("/api/payments/verify",{
-      method:"POST",
-      body:JSON.stringify({transactionId:Number(id),txRef:ref})
-    })
-      .then(response=>setMessage(response.message))
-      .catch(err=>setMessage(err instanceof Error?err.message:"Payment verification failed"));
-  },[params]);
+  useEffect(()=>{void verify();},[]);
+
+  const supportLink=`/support?category=PAYMENT_NOT_REFLECTED${ref?`&paymentTxRef=${encodeURIComponent(ref)}`:""}`;
 
   return <section className="authSection singlePanel">
-    <div className="authCard soloCard">
+    <div className="authCard soloCard paymentResultCard">
       <span className="eyebrow">Secure payment</span>
       <h1>Payment verification</h1>
+      {busy&&<div className="busyNotice"><span className="spinner"/>Checking payment...</div>}
       <p>{message}</p>
-      <Link className="btn primary" to={user?.role==="ENUMERATOR"?"/enumerator":"/"}>Return to dashboard</Link>
+      <div className="paymentResultActions">
+        {canRetry&&!verified&&<button className="btn secondary" type="button" disabled={busy} onClick={()=>void verify()}>{busy?"Checking...":"Check payment status again"}</button>}
+        <Link className="btn outline" to={supportLink}>Contact Support about this payment</Link>
+        <Link className="btn primary" to={user?.role==="ENUMERATOR"?"/enumerator":"/"}>Return to dashboard</Link>
+      </div>
     </div>
   </section>;
 }
@@ -1059,10 +1091,11 @@ export default function App(){
           <Route path="/enumerator" element={<Guard role="ENUMERATOR"><EnumeratorDash/></Guard>}/>
           <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>
           <Route path="/admin/operations" element={<Guard role="ADMIN"><AdminOperations/></Guard>}/>
+          <Route path="/admin/support" element={<Guard role="ADMIN"><AdminSupport/></Guard>}/>
           <Route path="/admin" element={<Guard role="ADMIN"><Admin/></Guard>}/>
           <Route path="/payment/callback" element={<Guard><Callback/></Guard>}/>
 
-          <Route path="/support/*" element={<Navigate to="/" replace/>}/>
+          <Route path="/support" element={<Guard><SupportCenter/></Guard>}/>
           <Route path="/applicant/*" element={<Navigate to="/" replace/>}/>
           <Route path="*" element={<Navigate to="/" replace/>}/>
         </Routes>
