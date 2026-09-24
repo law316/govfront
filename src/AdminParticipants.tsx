@@ -1,6 +1,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 type ParticipantTab="registry"|"materials"|"assessment"|"plans";
 type Programme="DIGITAL_SKILLS"|"BUSINESS_SUPPORT";
@@ -132,6 +133,7 @@ export default function AdminParticipants(){
   };
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),12000);
 
   const filteredParticipants=useMemo(()=>{
     const q=search.trim().toLowerCase();

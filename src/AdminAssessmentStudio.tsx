@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 type Audience="ENUMERATOR"|"PARTICIPANT";
 type Workspace="QUESTIONS"|"REVIEWS";
@@ -120,6 +121,7 @@ export default function AdminAssessmentStudio(){
   }
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),12000);
 
   const filtered=useMemo(()=>{
     const q=search.trim().toLowerCase();

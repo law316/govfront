@@ -1,6 +1,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 type Provider={
   id:number;
@@ -84,6 +85,7 @@ export default function AdminTrainingProviders(){
   }
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),12000);
 
   const filteredProviders=useMemo(()=>{
     const q=search.trim().toLowerCase();

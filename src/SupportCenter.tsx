@@ -1,6 +1,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Link,useSearchParams} from "react-router-dom";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 type SupportMessage={id:number;senderUserId:number;senderRole:string;senderName:string;message:string;createdAt:string};
 type SupportTicket={id:number;userId:number;userRole:string;fullName:string;email:string;category:string;subject:string;paymentTxRef?:string|null;status:string;createdAt:string;updatedAt:string;lastMessageAt:string;messages:SupportMessage[]};
@@ -42,6 +43,7 @@ export default function SupportCenter(){
   }
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),12000);
 
   async function createTicket(e:FormEvent){
     e.preventDefault();

@@ -1,6 +1,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
 
 type AdminTab="programme"|"payments"|"accounts";
@@ -112,6 +113,7 @@ export default function AdminOperations(){
   };
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),12000);
 
   const filteredEnumerators=useMemo(()=>{
     const q=accountSearch.trim().toLowerCase();

@@ -877,3 +877,15 @@ input,select,textarea,button{max-width:100%}
 @media(max-width:1050px){.materialLibraryLayout{grid-template-columns:1fr}.materialUploadCard{position:static}.assessmentTargetCard{grid-template-columns:1fr 1fr}.assessmentTargetCard>div{grid-column:1/-1}.materialHistoryHeader{align-items:stretch;flex-direction:column}.materialHistoryFilters{width:100%}}
 @media(max-width:760px){.studioAudienceBar,.questionSetHeading,.questionSetSaveBar,.writtenReviewFooter{align-items:stretch;flex-direction:column}.segmentedControl{width:100%}.segmentedControl button{flex:1}.assessmentTargetCard,.questionDraftGrid,.materialTargetGrid,.materialHistoryFilters{grid-template-columns:1fr}.dynamicOptionRow{grid-template-columns:34px 1fr}.dynamicOptionRow .markCorrect,.dynamicOptionRow .removeOption{grid-column:auto}.questionDraftHeader{align-items:flex-start;flex-direction:column}.questionSetSaveBar{bottom:6px}.materialRecord{grid-template-columns:1fr}.materialRecordIcon{width:48px;height:48px}.materialRecordTitle{align-items:flex-start;flex-direction:column}.manualMarkButtons{display:grid;grid-template-columns:1fr 1fr}}
 
+
+
+/* Phase 8F3A - live updates + reliable downloads */
+.liveUpdateStrip{display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:1px solid #d8e5dc;background:#f7fbf8;border-radius:11px;padding:9px 11px;margin:0 0 12px;color:#466054;font-size:12px}
+.liveUpdateStrip .liveDot{width:9px;height:9px;border-radius:50%;background:#2b8a58;box-shadow:0 0 0 4px rgba(43,138,88,.10)}
+.liveUpdateStrip small{color:var(--muted);margin-left:auto}
+.liveUpdateStrip button{border:0;background:transparent;color:var(--green);font-weight:850;cursor:pointer;padding:4px 6px}
+.liveUpdateStrip button:disabled{opacity:.55;cursor:default}
+.resource:disabled{cursor:wait;opacity:.72}
+.resource em{min-width:92px;text-align:right}
+@media(max-width:640px){.liveUpdateStrip small{margin-left:0;width:100%;padding-left:18px}.liveUpdateStrip button{margin-left:auto}}
+

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 type Announcement={id:number;title:string;message:string;audience:string;createdAt:string};
 type ProgrammeCurrent={deadlineAt:string;secondsRemaining:number;expired:boolean;announcements:Announcement[]};
@@ -11,12 +12,25 @@ function formatUnit(value:number,label:string){
 export default function ProgrammeNoticeBoard(){
   const[data,setData]=useState<ProgrammeCurrent|null>(null);
   const[remaining,setRemaining]=useState(0);
+  const[refreshing,setRefreshing]=useState(false);
+  const[lastChecked,setLastChecked]=useState<Date|null>(null);
 
-  useEffect(()=>{
-    api<ProgrammeCurrent>("/api/programme/current")
-      .then(result=>{setData(result);setRemaining(Math.max(0,result.secondsRemaining||0));})
-      .catch(()=>{});
-  },[]);
+  async function load(showBusy=false){
+    if(showBusy)setRefreshing(true);
+    try{
+      const result=await api<ProgrammeCurrent>("/api/programme/current");
+      setData(result);
+      setRemaining(Math.max(0,result.secondsRemaining||0));
+      setLastChecked(new Date());
+    }catch{
+      // Keep the latest successful snapshot visible if a background refresh fails.
+    }finally{
+      if(showBusy)setRefreshing(false);
+    }
+  }
+
+  useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(false),10000);
 
   useEffect(()=>{
     if(!data)return;
@@ -35,6 +49,13 @@ export default function ProgrammeNoticeBoard(){
   if(!data)return null;
 
   return <section className="programmeNoticeBoard">
+    <div className="liveUpdateStrip">
+      <span className="liveDot" aria-hidden="true"/>
+      <span>Updates appear automatically while this page is open.</span>
+      {lastChecked&&<small>Last checked {lastChecked.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"})}</small>}
+      <button type="button" disabled={refreshing} onClick={()=>void load(true)}>{refreshing?"Updating...":"Update now"}</button>
+    </div>
+
     <div className="countdownPanel">
       <div>
         <span className="eyebrow">Programme timeline</span>

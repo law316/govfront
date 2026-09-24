@@ -1,6 +1,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 type Library="ENUMERATOR"|"PARTICIPANT";
 type ParticipantTarget="ALL_PARTICIPANTS"|"DIGITAL_SKILLS"|"BUSINESS_SUPPORT"|"SKILL_TRACK";
@@ -77,6 +78,7 @@ export default function AdminMaterialLibrary(){
   }
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),12000);
 
   const filtered=useMemo(()=>{
     const q=search.trim().toLowerCase();

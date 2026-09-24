@@ -13,6 +13,7 @@ import AdminAssessmentStudio from "./AdminAssessmentStudio";
 import AdminMaterialLibrary from "./AdminMaterialLibrary";
 import AdminTrainingProviders from "./AdminTrainingProviders";
 import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
+import {useLiveRefresh} from "./useLiveRefresh";
 
 const PORTAL_NAME="National Enterprise & Skills Support Portal";
 
@@ -417,6 +418,7 @@ function EnumeratorDash(){
   const[message,setMessage]=useState("");
   const[error,setError]=useState("");
   const[busy,setBusy]=useState("");
+  const[downloadingId,setDownloadingId]=useState<number|null>(null);
 
   const load=async()=>{
     setError("");
@@ -439,6 +441,7 @@ function EnumeratorDash(){
   };
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),10000);
 
   const pay=async()=>{
     setError("");
@@ -457,6 +460,20 @@ function EnumeratorDash(){
     }
   };
 
+  const downloadMaterial=async(item:any)=>{
+    if(downloadingId!==null)return;
+    setDownloadingId(item.id);
+    setError("");
+    setMessage("");
+    try{
+      await download(`/api/training/materials/${item.id}/download`,item.originalFilename);
+      setMessage(`Download started. Check your Downloads or Files app for ${item.originalFilename}.`);
+    }catch(err){
+      setError(err instanceof Error?err.message:"Download could not be completed.");
+    }finally{
+      setDownloadingId(null);
+    }
+  };
   const progressLabel=useMemo(()=>{
     if(!data)return "Loading";
     if(data.status==="PENDING_PAYMENT")return "Pending payment";
@@ -481,6 +498,7 @@ function EnumeratorDash(){
     {message&&<div className="success">{message}</div>}
 
     <ProgrammeNoticeBoard/>
+    <div className="liveUpdateStrip"><span className="liveDot"/><span>Your dashboard updates automatically while it is open.</span></div>
     {busy==="payment"&&<div className="busyNotice"><span className="spinner"/>Preparing your secure payment page...</div>}
 
     {data&&<>
@@ -538,13 +556,14 @@ function EnumeratorDash(){
                     className="resource"
                     type="button"
                     key={item.id}
-                    onClick={()=>void download(`/api/training/materials/${item.id}/download`,item.originalFilename)}
+                    disabled={downloadingId!==null}
+                    onClick={()=>void downloadMaterial(item)}
                   >
                     <span>
                       <b>{item.title}</b>
                       <small>{item.description}</small>
                     </span>
-                    <em>Download</em>
+                    <em>{downloadingId===item.id?"Downloading...":"Download"}</em>
                   </button>
                 )}
               </div>
@@ -578,7 +597,7 @@ function EnumeratorDash(){
         <article className="panel fieldAccessPanel">
           <div>
             <span className="eyebrow">Qualified field access</span>
-            <h2>You are ready for the second platform</h2>
+            <h2>You are ready to use the Participant Portal</h2>
             <p>Use the active access code and the participant-registration link when beginning field registration.</p>
           </div>
 
@@ -595,7 +614,7 @@ function EnumeratorDash(){
                   <input readOnly value={data.referralLink} aria-label="Participant registration link"/>
                   <button className="btn secondary small" type="button" onClick={()=>void navigator.clipboard.writeText(data.referralLink)}>Copy link</button>
                 </>
-                :<p className="muted">The participant-platform link will appear here when available.</p>
+                :<p className="muted">The participant portal link will appear here when available.</p>
               }
             </div>
           </div>
@@ -667,6 +686,7 @@ function Admin(){
   };
 
   useEffect(()=>{void load();},[]);
+  useLiveRefresh(()=>load(),10000);
 
   async function createCode(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
@@ -821,7 +841,7 @@ function Admin(){
       </button>
       <button className={activeTab==="training"?"active":""} type="button" onClick={()=>setActiveTab("training")}>Training and Exam</button>
       <button className={activeTab==="access"?"active":""} type="button" onClick={()=>setActiveTab("access")}>Access Code</button>
-      <button className="refreshTab" type="button" onClick={()=>void load()}>Refresh data</button>
+      <button className="refreshTab" type="button" onClick={()=>void load()}>Update now</button>
     </div>
 
     {activeTab==="overview"&&<>
@@ -1015,13 +1035,13 @@ function Admin(){
 
         <article className="card infoCard">
           <span className="eyebrow">Field deployment model</span>
-          <h2>How this connects to the second frontend</h2>
+          <h2>How this connects to the Participant Portal</h2>
           <ol>
             <li>Enumerator completes payment and training.</li>
             <li>Enumerator passes the qualification exam.</li>
             <li>Administrator activates the current field access code.</li>
-            <li>Qualified Enumerators receive the participant-platform link and code.</li>
-            <li>The second frontend is reserved for participant registrations only.</li>
+            <li>Qualified Enumerators receive the participant portal link and code.</li>
+            <li>The Participant Portal is reserved for participant registration and participant services.</li>
           </ol>
         </article>
       </div>
