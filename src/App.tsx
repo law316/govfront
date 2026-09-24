@@ -8,8 +8,9 @@ import SupportCenter from "./SupportCenter";
 import AdminSupport from "./AdminSupport";
 import ProgrammeNoticeBoard from "./ProgrammeNoticeBoard";
 import EnumeratorExamCenter from "./EnumeratorExamCenter";
-import AdminExamBank from "./AdminExamBank";
 import AdminContentControl from "./AdminContentControl";
+import AdminAssessmentStudio from "./AdminAssessmentStudio";
+import AdminMaterialLibrary from "./AdminMaterialLibrary";
 import AdminTrainingProviders from "./AdminTrainingProviders";
 import {NIGERIA_STATES,lgasForState} from "./NigeriaLocations";
 
@@ -89,7 +90,8 @@ function Layout({children}:{children:React.ReactNode}){
             {user?.role==="ENUMERATOR"&&<><NavLink to="/enumerator">Dashboard</NavLink><NavLink to="/enumerator/exam">Exam Centre</NavLink><NavLink to="/support">Support</NavLink></>}
             {user?.role==="ADMIN"&&<>
               <NavLink to="/admin">Administration</NavLink>
-              <NavLink to="/admin/exam-bank">Exam Bank</NavLink>
+              <NavLink to="/admin/assessment-studio">Assessment Studio</NavLink>
+              <NavLink to="/admin/material-library">Material Library</NavLink>
               <NavLink to="/admin/content-control">Content Control</NavLink>
               <NavLink to="/admin/training-providers">Training Providers</NavLink>
               <NavLink to="/admin/participants">Participants</NavLink>
@@ -794,11 +796,15 @@ function Admin(){
         <Link className="btn secondary small" to="/admin/operations">Open operations</Link>
       </article>
       <article className="card adminLaunchCard">
-        <div><span className="eyebrow">Qualification assessment</span><h3>Professional Question Bank</h3><p>Create, edit, review, deactivate, reactivate and permanently delete safe assessment questions.</p></div>
-        <Link className="btn secondary small" to="/admin/exam-bank">Open question bank</Link>
+        <div><span className="eyebrow">Assessment authoring</span><h3>Professional Assessment Studio</h3><p>Build complete Enumerator and Participant question sets, use Multiple Choice, Yes/No or Written Answer, and review written responses.</p></div>
+        <Link className="btn secondary small" to="/admin/assessment-studio">Open Assessment Studio</Link>
       </article>
       <article className="card adminLaunchCard">
-        <div><span className="eyebrow">Master content control</span><h3>Edit, archive or permanently delete content</h3><p>Manage Enumerator resources, Participant resources/questions, announcements, access codes and timeline reset controls.</p></div>
+        <div><span className="eyebrow">Study resources</span><h3>Material Library & upload history</h3><p>Upload several files, keep a full resource catalogue, replace files and target Participant materials by programme or course.</p></div>
+        <Link className="btn secondary small" to="/admin/material-library">Open Material Library</Link>
+      </article>
+      <article className="card adminLaunchCard">
+        <div><span className="eyebrow">Master content control</span><h3>Edit, archive or permanently delete content</h3><p>Manage announcements, access codes and legacy content controls while protected history remains preserved.</p></div>
         <Link className="btn secondary small" to="/admin/content-control">Open content control</Link>
       </article>
       <article className="card adminLaunchCard">
@@ -956,30 +962,32 @@ function Admin(){
 
     {activeTab==="training"&&
       <div className="featureGrid two">
-        <form className="card formCard" onSubmit={uploadMaterial}>
-          <span className="eyebrow">Training library</span>
-          <h2>Publish study material</h2>
-          <p>Paid Enumerators can download approved resources before taking the timed qualification assessment.</p>
-
-          <label>Title<input name="title" required maxLength={180}/></label>
-          <label>Description<input name="description" required maxLength={600}/></label>
-          <label>Training file<input name="file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.epub" required/></label>
-
-          <button className="btn primary full" type="submit" disabled={busy==="material"}>{busy==="material"?"Uploading...":"Upload material"}</button>
-        </form>
-
         <article className="card examAdminLaunch">
           <div className="examAdminLaunchIcon">{"\u2713"}</div>
-          <span className="eyebrow">Qualification assessment</span>
-          <h2>Manage the professional question bank</h2>
-          <p>Review existing questions before adding new ones, edit mistakes, archive outdated questions and prevent duplicate entries.</p>
+          <span className="eyebrow">Assessment authoring</span>
+          <h2>Build complete question sets</h2>
+          <p>Create several questions before saving, choose Multiple Choice, Yes/No or Written Answer, and manage both Enumerator and Participant assessments.</p>
           <ul>
-            <li>Dedicated question-bank workspace</li>
-            <li>Duplicate-question protection</li>
-            <li>Edit and deactivate controls</li>
-            <li>Timed Exam Centre for Enumerators</li>
+            <li>Multiple questions before final save</li>
+            <li>Dynamic 2-8 choice answers</li>
+            <li>Yes / No questions</li>
+            <li>Written responses with Admin review</li>
           </ul>
-          <Link className="btn primary full" to="/admin/exam-bank">Open Question Bank</Link>
+          <Link className="btn primary full" to="/admin/assessment-studio">Open Assessment Studio</Link>
+        </article>
+
+        <article className="card examAdminLaunch">
+          <div className="examAdminLaunchIcon">FILES</div>
+          <span className="eyebrow">Training resources</span>
+          <h2>Manage the complete Material Library</h2>
+          <p>Upload several study materials, see every previous upload, replace a file when necessary and target Participant resources to the right programme or course.</p>
+          <ul>
+            <li>Enumerator upload history</li>
+            <li>Participant course targeting</li>
+            <li>Replace existing file</li>
+            <li>Deactivate, reactivate and safe delete</li>
+          </ul>
+          <Link className="btn primary full" to="/admin/material-library">Open Material Library</Link>
         </article>
       </div>
     }
@@ -1086,7 +1094,9 @@ export default function App(){
           <Route path="/enumerators/register" element={<Navigate to="/register" replace/>}/>
           <Route path="/enumerator" element={<Guard role="ENUMERATOR"><EnumeratorDash/></Guard>}/>
           <Route path="/enumerator/exam" element={<Guard role="ENUMERATOR"><EnumeratorExamCenter/></Guard>}/>
-          <Route path="/admin/exam-bank" element={<Guard role="ADMIN"><AdminExamBank/></Guard>}/>
+          <Route path="/admin/exam-bank" element={<Navigate to="/admin/assessment-studio" replace/>}/>
+          <Route path="/admin/assessment-studio" element={<Guard role="ADMIN"><AdminAssessmentStudio/></Guard>}/>
+          <Route path="/admin/material-library" element={<Guard role="ADMIN"><AdminMaterialLibrary/></Guard>}/>
           <Route path="/admin/content-control" element={<Guard role="ADMIN"><AdminContentControl/></Guard>}/>
           <Route path="/admin/training-providers" element={<Guard role="ADMIN"><AdminTrainingProviders/></Guard>}/>
           <Route path="/admin/participants" element={<Guard role="ADMIN"><AdminParticipants/></Guard>}/>

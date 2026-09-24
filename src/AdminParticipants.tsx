@@ -307,8 +307,8 @@ export default function AdminParticipants(){
 
     <div className="adminTabs participantTabs" role="tablist" aria-label="Participant administration sections">
       <button className={activeTab==="registry"?"active":""} type="button" onClick={()=>setActiveTab("registry")}>Participant Registry</button>
-      <button className={activeTab==="materials"?"active":""} type="button" onClick={()=>setActiveTab("materials")}>Materials</button>
-      <button className={activeTab==="assessment"?"active":""} type="button" onClick={()=>setActiveTab("assessment")}>Assessments</button>
+      <button className={activeTab==="materials"?"active":""} type="button" onClick={()=>setActiveTab("materials")}>Material Library</button>
+      <button className={activeTab==="assessment"?"active":""} type="button" onClick={()=>setActiveTab("assessment")}>Assessment Studio</button>
       <button className={activeTab==="plans"?"active":""} type="button" onClick={()=>setActiveTab("plans")}>
         Business Plans {plans.filter(item=>["SUBMITTED","RESUBMITTED"].includes(item.status)).length>0&&
           <span className="tabCount">{plans.filter(item=>["SUBMITTED","RESUBMITTED"].includes(item.status)).length}</span>}
@@ -399,136 +399,21 @@ export default function AdminParticipants(){
     </>}
 
     {activeTab==="materials"&&
-      <div className="participantSplit">
-        <form className="card formCard participantForm" onSubmit={uploadMaterial}>
-          <span className="eyebrow">Participant resources</span>
-          <h2>Publish pathway material</h2>
-          <p>Participants can see approved material listings for their pathway. Download access is enabled only after the one-time resource-provisioning payment is verified.</p>
-
-          <ProgrammeFields
-            programme={materialProgramme}
-            track={materialTrack}
-            setProgramme={setMaterialProgramme}
-            setTrack={setMaterialTrack}
-          />
-
-          <label>Title<input name="title" maxLength={180} required/></label>
-          <label>Description<textarea name="description" maxLength={600} rows={4} required/></label>
-          <label>Material file<input name="file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.epub" required/></label>
-
-          <button className="btn primary full" type="submit" disabled={busy==="material-upload"}>
-            {busy==="material-upload"?"Uploading...":"Publish participant material"}
-          </button>
-
-          <p className="adminHint">To replace a material, deactivate the old version and publish the updated file. The historical record remains preserved.</p>
-        </form>
-
-        <article className="card tableWrap participantListCard">
-          <div className="tableHead">
-            <div>
-              <span className="eyebrow">Resource catalogue</span>
-              <h2>Published participant materials</h2>
-            </div>
-            <span className="recordCount">{materials.length} records</span>
-          </div>
-
-          {materials.length===0
-            ?<div className="emptyState"><h3>No participant materials yet</h3><p>Publish the first pathway resource using the form.</p></div>
-            :<div className="tableScroll">
-              <table>
-                <thead><tr><th>Material</th><th>Pathway</th><th>Track</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody>
-                  {materials.map(item=>
-                    <tr key={item.id}>
-                      <td><strong>{item.title}</strong><small className="tableSub">{item.originalFilename}</small><small className="tableSub">{item.description}</small></td>
-                      <td>{label(item.program)}</td>
-                      <td>{label(item.skillTrack)}</td>
-                      <td><Status value={item.active?"ACTIVE":"INACTIVE"}/></td>
-                      <td>
-                        {item.active
-                          ?<button className="btn outline small" type="button" disabled={busy===`material:${item.id}`} onClick={()=>void deactivateMaterial(item.id)}>
-                            {busy===`material:${item.id}`?"Working...":"Deactivate"}
-                          </button>
-                          :<span className="muted">Archived</span>}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          }
-        </article>
-      </div>
+      <article className="card participantWorkspaceLaunch">
+        <span className="eyebrow">Participant resources</span>
+        <h2>Participant Material Library</h2>
+        <p>The new Material Library supports multiple uploads, visible upload history, file replacement and targeting to All Participants, Business Support, all Digital Skills participants or one specific skill track.</p>
+        <Link className="btn primary" to="/admin/material-library">Open Participant Material Library</Link>
+      </article>
     }
 
     {activeTab==="assessment"&&
-      <div className="participantSplit">
-        <form className="card formCard participantForm" onSubmit={addQuestion}>
-          <span className="eyebrow">Participant assessment</span>
-          <h2>Add pathway question</h2>
-          <p>Create assessment questions for the business pathway, a specific digital skill track, or the general digital pathway.</p>
-
-          <ProgrammeFields
-            programme={questionProgramme}
-            track={questionTrack}
-            setProgramme={setQuestionProgramme}
-            setTrack={setQuestionTrack}
-          />
-
-          <label>Question<textarea name="questionText" maxLength={900} rows={4} required/></label>
-          {["A","B","C","D"].map(option=>
-            <label key={option}>Option {option}<input name={`option${option}`} maxLength={400} required/></label>
-          )}
-          <label>Correct answer
-            <select name="correctOption" defaultValue="A">
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
-          </label>
-
-          <button className="btn primary full" type="submit" disabled={busy==="question-add"}>
-            {busy==="question-add"?"Adding...":"Add participant question"}
-          </button>
-        </form>
-
-        <article className="card tableWrap participantListCard">
-          <div className="tableHead">
-            <div>
-              <span className="eyebrow">Assessment bank</span>
-              <h2>Participant questions</h2>
-            </div>
-            <span className="recordCount">{questions.length} records</span>
-          </div>
-
-          {questions.length===0
-            ?<div className="emptyState"><h3>No participant questions yet</h3><p>Add the first pathway assessment question.</p></div>
-            :<div className="tableScroll">
-              <table>
-                <thead><tr><th>Question</th><th>Pathway</th><th>Track</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody>
-                  {questions.map(item=>
-                    <tr key={item.id}>
-                      <td><strong>{item.questionText}</strong></td>
-                      <td>{label(item.program)}</td>
-                      <td>{label(item.skillTrack)}</td>
-                      <td><Status value={item.active?"ACTIVE":"INACTIVE"}/></td>
-                      <td>
-                        {item.active
-                          ?<button className="btn outline small" type="button" disabled={busy===`question:${item.id}`} onClick={()=>void deactivateQuestion(item.id)}>
-                            {busy===`question:${item.id}`?"Working...":"Deactivate"}
-                          </button>
-                          :<span className="muted">Archived</span>}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          }
-        </article>
-      </div>
+      <article className="card participantWorkspaceLaunch">
+        <span className="eyebrow">Participant assessment</span>
+        <h2>Professional Assessment Studio</h2>
+        <p>Build several Participant questions before saving the set. Use Multiple Choice, Yes/No or Written Answer and target the right programme or digital skill track.</p>
+        <Link className="btn primary" to="/admin/assessment-studio">Open Participant Assessment Studio</Link>
+      </article>
     }
 
     {activeTab==="plans"&&<>

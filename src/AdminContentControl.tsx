@@ -239,7 +239,9 @@ export default function AdminContentControl(){
             <td>{details}</td>
             <td><b className={`statusPill status-${active?"active":"inactive"}`}>{active?"Active":"Inactive"}</b></td>
             <td><div className="actionButtons">
-              {kind!=="access"&&<button className="btn outline small" type="button" onClick={()=>setEditTarget({kind:kind as "enum-material"|"participant-material"|"participant-question"|"announcement",item:{...item}})}>Edit</button>}
+              {(kind==="enum-material"||kind==="participant-material")&&<Link className="btn outline small" to="/admin/material-library">Open library</Link>}
+              {kind==="participant-question"&&<Link className="btn outline small" to="/admin/assessment-studio">Open studio</Link>}
+              {kind==="announcement"&&<button className="btn outline small" type="button" onClick={()=>setEditTarget({kind:"announcement",item:{...item}})}>Edit</button>}
               <button className="btn outline small" type="button" disabled={busy===`active:${kind}:${item.id}`} onClick={()=>void activeAction(kind,item,!active)}>{active?"Deactivate":"Reactivate"}</button>
               <button className="btn danger small" type="button" disabled={busy===`delete:${kind}:${item.id}`} onClick={()=>void permanentDelete(kind,item)}>{busy===`delete:${kind}:${item.id}`?"Deleting...":"Delete"}</button>
             </div></td>

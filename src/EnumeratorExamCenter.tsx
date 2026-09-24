@@ -12,7 +12,8 @@ type Overview={
   activeSessionDeadlineAt?:string|null;
 };
 
-type Question={id:number;questionText:string;options:string[]};
+type QuestionType="MULTIPLE_CHOICE"|"YES_NO"|"WRITTEN";
+type Question={id:number;questionType?:QuestionType;questionText:string;options:string[]};
 type Session={
   sessionId:number;
   startedAt:string;
@@ -22,13 +23,30 @@ type Session={
   questions:Question[];
 };
 
-type Result={score:number;passed:boolean;message:string};
+type Result={
+  score:number|null;
+  passed:boolean|null;
+  pendingReview:boolean;
+  message:string;
+};
 
 function formatClock(total:number){
   const safe=Math.max(0,total);
   const minutes=Math.floor(safe/60);
   const seconds=safe%60;
   return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+}
+
+function hasAnswer(question:Question,value?:string){
+  return question.questionType==="WRITTEN"
+    ?Boolean(value?.trim())
+    :Boolean(value);
+}
+
+function answerSummary(question:Question,value?:string){
+  if(!hasAnswer(question,value))return "Not answered";
+  if(question.questionType==="WRITTEN")return "Written response entered";
+  return `Selected ${value}`;
 }
 
 export default function EnumeratorExamCenter(){
@@ -68,6 +86,7 @@ export default function EnumeratorExamCenter(){
     try{
       const next=await api<Session>("/api/exam/start",{method:"POST"});
       setSession(next);
+      setAnswers({});
       setRemaining(Math.max(0,next.secondsRemaining));
       setCurrent(0);
     }catch(err){setError(err instanceof Error?err.message:"Could not start the assessment.");}
@@ -76,7 +95,7 @@ export default function EnumeratorExamCenter(){
 
   async function submit(auto=false){
     if(!session||submittedRef.current)return;
-    const unanswered=session.questions.filter(q=>!answers[q.id]).length;
+    const unanswered=session.questions.filter(q=>!hasAnswer(q,answers[q.id])).length;
     if(!auto&&unanswered>0&&!window.confirm(`${unanswered} question${unanswered===1?" is":"s are"} unanswered. Submit anyway?`))return;
     if(!auto&&!window.confirm("Submit this qualification assessment now? Your answers cannot be changed after submission."))return;
 
@@ -107,20 +126,22 @@ export default function EnumeratorExamCenter(){
 
   const answeredCount=useMemo(()=>{
     if(!session)return 0;
-    return session.questions.filter(q=>Boolean(answers[q.id])).length;
+    return session.questions.filter(q=>hasAnswer(q,answers[q.id])).length;
   },[session,answers]);
 
   if(!overview&&!error)return <section className="surveyExamShell"><div className="surveyLoading card"><span className="spinner"/>Preparing secure assessment...</div></section>;
 
   if(result)return <section className="surveyExamShell surveyResultScreen">
-    <div className={`surveyResultCard ${result.passed?"passed":"retry"}`}>
+    <div className={`surveyResultCard ${result.pendingReview?"pending":result.passed?"passed":"retry"}`}>
       <span className="eyebrow">Qualification result</span>
-      <div className="surveyScoreCircle"><strong>{result.score}%</strong><small>final score</small></div>
-      <h1>{result.passed?"Assessment completed successfully":"Assessment not yet passed"}</h1>
+      {result.pendingReview
+        ?<div className="pendingReviewBadge"><strong>Review pending</strong><span>Your written response has been submitted securely.</span></div>
+        :<div className="surveyScoreCircle"><strong>{result.score??0}%</strong><small>final score</small></div>}
+      <h1>{result.pendingReview?"Written response submitted":result.passed?"Assessment completed successfully":"Assessment not yet passed"}</h1>
       <p>{result.message}</p>
       <div className="surveyResultActions">
         <Link className="btn primary" to="/enumerator">Return to dashboard</Link>
-        {!result.passed&&<button className="btn outline" type="button" onClick={()=>{setResult(null);void start();}}>Start another attempt</button>}
+        {!result.pendingReview&&!result.passed&&<button className="btn outline" type="button" onClick={()=>{setResult(null);void start();}}>Start another attempt</button>}
       </div>
     </div>
   </section>;
@@ -143,9 +164,9 @@ export default function EnumeratorExamCenter(){
         <div className="surveyInstructions">
           <h3>Before you begin</h3>
           <ol>
-            <li>Read one question at a time and choose the best answer.</li>
-            <li>Use Previous, Next or the numbered navigator to move around the form.</li>
-            <li>You can review unanswered questions before final submission.</li>
+            <li>Read each question carefully. Multiple-choice and Yes/No items are marked automatically.</li>
+            <li>Written Answer questions use a text box and are reviewed by the administrator after submission.</li>
+            <li>Use Previous, Next or the numbered navigator to move around the assessment.</li>
             <li>The assessment submits automatically when the official timer reaches zero.</li>
           </ol>
         </div>
@@ -173,7 +194,7 @@ export default function EnumeratorExamCenter(){
   }
 
   const progress=session.totalQuestions?Math.round((answeredCount/session.totalQuestions)*100):0;
-  const unanswered=session.questions.filter(q=>!answers[q.id]);
+  const unanswered=session.questions.filter(q=>!hasAnswer(q,answers[q.id]));
 
   if(reviewing)return <section className="surveyExamShell surveyActiveScreen">
     <header className="surveyExamHeader">
@@ -188,16 +209,19 @@ export default function EnumeratorExamCenter(){
       <p>{answeredCount} of {session.totalQuestions} questions answered. {unanswered.length?`${unanswered.length} still need attention.`:"Every question has an answer."}</p>
 
       <div className="surveyReviewGrid">
-        {session.questions.map((q,index)=><button
-          key={q.id}
-          type="button"
-          className={answers[q.id]?"answered":"unanswered"}
-          onClick={()=>{setCurrent(index);setReviewing(false);}}
-        >
-          <span>{index+1}</span>
-          <div><strong>Question {index+1}</strong><small>{answers[q.id]?`Answered ${answers[q.id]}`:"Not answered"}</small></div>
-          <em>{answers[q.id]?"\u2713":"!"}</em>
-        </button>)}
+        {session.questions.map((q,index)=>{
+          const answered=hasAnswer(q,answers[q.id]);
+          return <button
+            key={q.id}
+            type="button"
+            className={answered?"answered":"unanswered"}
+            onClick={()=>{setCurrent(index);setReviewing(false);}}
+          >
+            <span>{index+1}</span>
+            <div><strong>Question {index+1}</strong><small>{answerSummary(q,answers[q.id])}</small></div>
+            <em>{answered?"\u2713":"!"}</em>
+          </button>;
+        })}
       </div>
 
       <div className="surveyReviewActions">
@@ -206,6 +230,8 @@ export default function EnumeratorExamCenter(){
       </div>
     </main>
   </section>;
+
+  const written=question.questionType==="WRITTEN";
 
   return <section className="surveyExamShell surveyActiveScreen">
     <header className="surveyExamHeader">
@@ -230,13 +256,16 @@ export default function EnumeratorExamCenter(){
       <aside className="surveyNavigator">
         <div className="surveyNavigatorHeading"><strong>Question navigator</strong><small>Select any question</small></div>
         <div className="surveyNumberGrid">
-          {session.questions.map((q,index)=><button
-            type="button"
-            key={q.id}
-            className={`${index===current?"current":""} ${answers[q.id]?"answered":""}`}
-            onClick={()=>setCurrent(index)}
-            aria-label={`Question ${index+1}${answers[q.id]?", answered":", unanswered"}`}
-          >{index+1}</button>)}
+          {session.questions.map((q,index)=>{
+            const answered=hasAnswer(q,answers[q.id]);
+            return <button
+              type="button"
+              key={q.id}
+              className={`${index===current?"current":""} ${answered?"answered":""}`}
+              onClick={()=>setCurrent(index)}
+              aria-label={`Question ${index+1}${answered?", answered":", unanswered"}`}
+            >{index+1}</button>;
+          })}
         </div>
         <div className="surveyLegend"><span><i className="done"/>Answered</span><span><i className="current"/>Current</span></div>
         <button className="btn outline full" type="button" onClick={()=>setReviewing(true)}>Review all answers</button>
@@ -245,30 +274,42 @@ export default function EnumeratorExamCenter(){
       <main className="surveyQuestionStage">
         <div className="surveyQuestionCard">
           <div className="surveyQuestionMeta">
-            <span>Question {current+1}</span>
-            <span className={answers[question.id]?"answeredState":"unansweredState"}>{answers[question.id]?"Answered":"Select one answer"}</span>
+            <span>{labelType(question.questionType)}</span>
+            <span className={hasAnswer(question,answers[question.id])?"answeredState":"unansweredState"}>{hasAnswer(question,answers[question.id])?"Answered":written?"Write your response":"Select one answer"}</span>
           </div>
 
           <h1>{question.questionText}</h1>
 
-          <div className="surveyAnswerList" role="radiogroup" aria-label={`Question ${current+1}`}>
-            {question.options.map((option,index)=>{
-              const value=String.fromCharCode(65+index);
-              const selected=answers[question.id]===value;
-              return <button
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                key={value}
-                className={selected?"selected":""}
-                onClick={()=>setAnswers(previous=>({...previous,[question.id]:value}))}
-              >
-                <span className="surveyAnswerRadio">{selected?<i/>:null}</span>
-                <b>{value}</b>
-                <span>{option}</span>
-              </button>;
-            })}
-          </div>
+          {written
+            ?<label className="surveyWrittenAnswer">
+              <span>Your written response</span>
+              <textarea
+                rows={9}
+                maxLength={6000}
+                value={answers[question.id]||""}
+                onChange={e=>setAnswers(previous=>({...previous,[question.id]:e.target.value}))}
+                placeholder="Type your answer clearly and completely here..."
+              />
+              <small>This response will be reviewed by the administrator before your final score is released.</small>
+            </label>
+            :<div className="surveyAnswerList" role="radiogroup" aria-label={`Question ${current+1}`}>
+              {question.options.map((option,index)=>{
+                const value=String.fromCharCode(65+index);
+                const selected=answers[question.id]===value;
+                return <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  key={value}
+                  className={selected?"selected":""}
+                  onClick={()=>setAnswers(previous=>({...previous,[question.id]:value}))}
+                >
+                  <span className="surveyAnswerRadio">{selected?<i/>:null}</span>
+                  <b>{value}</b>
+                  <span>{option}</span>
+                </button>;
+              })}
+            </div>}
 
           <div className="surveyQuestionActions">
             <button className="btn outline" type="button" disabled={current===0} onClick={()=>setCurrent(v=>Math.max(0,v-1))}>Previous</button>
@@ -285,4 +326,10 @@ export default function EnumeratorExamCenter(){
       <button className="textButton" type="button" onClick={()=>setReviewing(true)}>Review & submit</button>
     </footer>
   </section>;
+}
+
+function labelType(type?:QuestionType){
+  if(type==="WRITTEN")return "Written Answer";
+  if(type==="YES_NO")return "Yes / No";
+  return "Multiple Choice";
 }
