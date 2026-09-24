@@ -889,3 +889,14 @@ input,select,textarea,button{max-width:100%}
 .resource em{min-width:92px;text-align:right}
 @media(max-width:640px){.liveUpdateStrip small{margin-left:0;width:100%;padding-left:18px}.liveUpdateStrip button{margin-left:auto}}
 
+
+/* Phase 8F5A - document question importer */
+.assessmentImportCard{display:grid;gap:14px;border:1px solid #cfe0d5;background:linear-gradient(180deg,#fbfdfb,#f6faf7)}
+.assessmentImportIntro{display:flex;justify-content:space-between;align-items:center;gap:18px}.assessmentImportIntro h2{margin:5px 0 7px}.assessmentImportIntro p{margin:0;max-width:760px}
+.assessmentImportButton{position:relative;overflow:hidden;white-space:nowrap;cursor:pointer}.assessmentImportButton input{position:absolute;inset:0;opacity:0;cursor:pointer}.assessmentImportButton.disabled{opacity:.55;pointer-events:none}
+.assessmentImportGuide{display:grid;gap:8px;border:1px dashed #a9c4b3;background:#fff;border-radius:12px;padding:14px}.assessmentImportGuide>strong{color:var(--green)}
+.assessmentImportGuide code{white-space:pre-wrap;background:#102e23;color:#fff;border-radius:10px;padding:12px 14px;line-height:1.6;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.assessmentImportGuide>span{font-size:12px;line-height:1.55;color:var(--muted)}.assessmentImportFile{display:flex;justify-content:space-between;gap:12px;align-items:center;border-radius:10px;background:#eef5f0;padding:10px 12px;font-size:12px}.assessmentImportFile span{color:var(--muted)}
+.assessmentImportWarning{border:1px solid #ead5a0;background:#fff8e7;color:#765b20;border-radius:10px;padding:10px 12px;font-size:12px}.assessmentImportFootnote{color:var(--muted);line-height:1.5}
+@media(max-width:720px){.assessmentImportIntro{align-items:stretch;flex-direction:column}.assessmentImportButton{width:100%;text-align:center}.assessmentImportFile{align-items:flex-start;flex-direction:column}}
+

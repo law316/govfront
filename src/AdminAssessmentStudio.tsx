@@ -2,6 +2,8 @@ import {useEffect,useMemo,useState} from "react";
 import {Link} from "react-router-dom";
 import {api} from "./api";
 import {useLiveRefresh} from "./useLiveRefresh";
+import AssessmentDocumentImporter from "./AssessmentDocumentImporter";
+import type {ImportedQuestion} from "./assessmentDocumentParser";
 
 type Audience="ENUMERATOR"|"PARTICIPANT";
 type Workspace="QUESTIONS"|"REVIEWS";
@@ -134,6 +136,30 @@ export default function AdminAssessmentStudio(){
     });
   },[saved,search,statusFilter]);
 
+  function importDocumentQuestions(imported:ImportedQuestion[]){
+    if(editingId||imported.length===0)return;
+
+    const mapped:DraftQuestion[]=imported.map((question,index)=>({
+      key:`import-${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
+      type:question.type,
+      questionText:question.questionText,
+      options:[...question.options],
+      correctIndex:question.correctIndex
+    }));
+
+    updateDrafts(current=>{
+      const blank=current.length===1
+        && !current[0].questionText.trim()
+        && current[0].options.every(option=>!option.trim());
+      return blank?mapped:[...current,...mapped];
+    });
+
+    const needsReview=imported.filter(question=>question.needsReview).length;
+    setMessage(
+      `${imported.length} question${imported.length===1?"":"s"} imported into this draft`
+      +(needsReview?`. ${needsReview} need the correct answer selected before saving.`:".")
+    );
+  }
   function setQuestion(key:string,patch:Partial<DraftQuestion>){
     updateDrafts(rows=>rows.map(row=>row.key===key?{...row,...patch}:row));
   }
@@ -414,6 +440,12 @@ export default function AdminAssessmentStudio(){
         </label>}
       </div>}
 
+      {!editingId&&
+        <AssessmentDocumentImporter
+          disabled={busy==="save-set"}
+          onImport={importDocumentQuestions}
+        />
+      }
       <section className="questionSetComposer">
         <div className="questionSetHeading">
           <div>
